@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.Entities;
 using WebArsip.Core.DTOs;
 using WebArsip.Infrastructure.DbContexts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebArsip.Api.Controllers
 {
@@ -18,6 +19,7 @@ namespace WebArsip.Api.Controllers
         }
 
         // GET: api/document
+        [Authorize(Roles = "Admin,Compliance,Audit,Policy")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetDocuments()
         {
@@ -35,6 +37,7 @@ namespace WebArsip.Api.Controllers
         }
 
         // GET: api/document/5
+        [Authorize(Roles = "Compliance,Policy")]
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
@@ -55,6 +58,7 @@ namespace WebArsip.Api.Controllers
         }
 
         // POST: api/document
+        [Authorize(Roles = "Admin,Compliance")]
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
@@ -84,6 +88,7 @@ namespace WebArsip.Api.Controllers
         }
 
         // PUT: api/document/5
+        [Authorize(Roles = "Compliance,Policy")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentUpdateDto dto)
         {
@@ -103,6 +108,7 @@ namespace WebArsip.Api.Controllers
         }
 
         // DELETE: api/document/5
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {

@@ -19,5 +19,6 @@ namespace WebArsip.Core.DTOs
         public string Email { get; set; } = string.Empty;
         public string RoleName { get; set; } = string.Empty;
         public string Message { get; set; } = "Login berhasil";
+        public string Token { get; set; } = string.Empty;
     }
 }
