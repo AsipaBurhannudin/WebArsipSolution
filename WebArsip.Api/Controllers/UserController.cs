@@ -9,6 +9,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -18,7 +19,7 @@ namespace WebArsip.Api.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserReadDto>>> GetUsers()
         {
@@ -33,7 +34,7 @@ namespace WebArsip.Api.Controllers
             }).ToList();
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<ActionResult<UserReadDto>> GetUser(int id)
         {
@@ -49,7 +50,7 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<UserReadDto>> CreateUser(UserCreateDto dto)
         {
@@ -75,7 +76,7 @@ namespace WebArsip.Api.Controllers
             return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, result);
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UserUpdateDto dto)
         {
@@ -92,7 +93,7 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {

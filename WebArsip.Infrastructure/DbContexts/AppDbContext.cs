@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.Entities;
 
 namespace WebArsip.Infrastructure.DbContexts
@@ -21,25 +15,22 @@ namespace WebArsip.Infrastructure.DbContexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // User ↔ Role (Many-to-One)
+            // 🔹 Relationships
             modelBuilder.Entity<User>()
                 .HasOne(u => u.Role)
                 .WithMany(r => r.Users)
                 .HasForeignKey(u => u.RoleId);
 
-            // Role ↔ Permission (One-to-Many)
             modelBuilder.Entity<Role>()
                 .HasMany(r => r.Permissions)
                 .WithOne(p => p.Role)
                 .HasForeignKey(p => p.RoleId);
 
-            // Document ↔ Permission (One-to-Many)
             modelBuilder.Entity<Document>()
                 .HasMany(d => d.Permissions)
                 .WithOne(p => p.Document)
                 .HasForeignKey(p => p.DocId);
 
-            // Document ↔ Archive (One-to-One)
             modelBuilder.Entity<Document>()
                 .HasOne(d => d.Archive)
                 .WithOne(a => a.Document)
@@ -47,7 +38,11 @@ namespace WebArsip.Infrastructure.DbContexts
 
             base.OnModelCreating(modelBuilder);
 
-            // 🔹 Seeding Role
+            // =====================================================
+            // 🔹 SEEDING DATA AWAL
+            // =====================================================
+
+            // 1️⃣ Roles
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleName = "Admin" },
                 new Role { RoleId = 2, RoleName = "Compliance" },
@@ -55,16 +50,44 @@ namespace WebArsip.Infrastructure.DbContexts
                 new Role { RoleId = 4, RoleName = "Policy" }
             );
 
-            // 🔹 Seeding User (default admin)
+            // 2️⃣ Default Admin User
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
                     UserId = 1,
                     Name = "Administrator",
                     Email = "admin@company.com",
-                    Password = "admin123", // ⚠️ nanti lebih baik pakai hashing
+                    Password = "admin123", // ⚠️ TODO: ganti ke hash
                     RoleId = 1
                 }
+            );
+
+            // 3️⃣ Sample Document (dummy awal supaya Permission FK aman)
+            modelBuilder.Entity<Document>().HasData(
+                new Document
+                {
+                    DocId = 1,
+                    Title = "Panduan Arsip Awal",
+                    Description = "Dokumen contoh awal untuk permission",
+                    FilePath = "/uploads/docs/sample.pdf",
+                    CreatedDate = DateTime.UtcNow,
+                    Status = "Active"
+                }
+            );
+
+            // 4️⃣ Permissions default sesuai UML
+            modelBuilder.Entity<Permission>().HasData(
+                // Admin: full access
+                new Permission { PermissionId = 1, RoleId = 1, DocId = 1, CanView = true, CanEdit = true, CanDelete = true, CanDownload = true, CanUpload = true },
+
+                // Compliance: view, upload, edit, archive
+                new Permission { PermissionId = 2, RoleId = 2, DocId = 1, CanView = true, CanEdit = true, CanDelete = true, CanDownload = false, CanUpload = true },
+
+                // Audit: view, download
+                new Permission { PermissionId = 3, RoleId = 3, DocId = 1, CanView = true, CanEdit = false, CanDelete = false, CanDownload = true, CanUpload = false },
+
+                // Policy: view, edit, upload revisi
+                new Permission { PermissionId = 4, RoleId = 4, DocId = 1, CanView = true, CanEdit = true, CanDelete = false, CanDownload = false, CanUpload = true }
             );
         }
     }

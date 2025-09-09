@@ -11,6 +11,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RoleController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,7 +21,7 @@ namespace WebArsip.Api.Controllers
             _context = context;
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<RoleReadDto>>> GetRoles()
         {
@@ -28,7 +29,7 @@ namespace WebArsip.Api.Controllers
             return roles.Select(r => new RoleReadDto { RoleId = r.RoleId, RoleName = r.RoleName }).ToList();
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<ActionResult<RoleReadDto>> GetRole(int id)
         {
@@ -38,7 +39,7 @@ namespace WebArsip.Api.Controllers
             return new RoleReadDto { RoleId = role.RoleId, RoleName = role.RoleName };
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<RoleReadDto>> CreateRole(RoleCreateDto dto)
         {
@@ -50,7 +51,7 @@ namespace WebArsip.Api.Controllers
                 new RoleReadDto { RoleId = role.RoleId, RoleName = role.RoleName });
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(int id, RoleCreateDto dto)
         {
@@ -63,7 +64,7 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id)
         {
