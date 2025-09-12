@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WebArsip.Infrastructure.DbContexts;
 
@@ -11,9 +12,11 @@ using WebArsip.Infrastructure.DbContexts;
 namespace WebArsip.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250910130049_AddIdentityTables")]
+    partial class AddIdentityTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -207,12 +210,15 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Property<int>("DocId")
                         .HasColumnType("int");
 
+                    b.Property<int>("DocumentDocId")
+                        .HasColumnType("int");
+
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 
                     b.HasKey("PermissionId");
 
-                    b.HasIndex("DocId");
+                    b.HasIndex("DocumentDocId");
 
                     b.HasIndex("RoleId");
 
@@ -387,7 +393,7 @@ namespace WebArsip.Infrastructure.Migrations
                 {
                     b.HasOne("WebArsip.Core.Entities.Document", "Document")
                         .WithMany()
-                        .HasForeignKey("DocId")
+                        .HasForeignKey("DocumentDocId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

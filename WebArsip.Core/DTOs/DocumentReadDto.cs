@@ -1,6 +1,6 @@
-﻿namespace WebArsip.Core.Entities
+﻿namespace WebArsip.Core.DTOs
 {
-    public class Document
+    public class DocumentReadDto
     {
         public int DocId { get; set; }
         public string Title { get; set; } = string.Empty;
@@ -9,8 +9,5 @@
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string Status { get; set; } = "Active";
-
-        public ICollection<Archive> Archives { get; set; } = new List<Archive>();
-        public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
     }
 }

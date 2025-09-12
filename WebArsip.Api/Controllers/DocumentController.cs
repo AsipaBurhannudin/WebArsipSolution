@@ -20,30 +20,78 @@ namespace WebArsip.Api.Controllers
             _context = context;
         }
 
-        // 🔹 Helper: cek permission
-        private async Task<bool> HasPermission(string roleName, int docId, Func<Permission, bool> predicate)
-        {
-            var roleId = await _context.Roles
-                .Where(r => r.RoleName == roleName)
-                .Select(r => r.RoleId)
-                .FirstOrDefaultAsync();
+        // 🔹 Helper: cek apakah user punya role Admin
+        private bool IsAdmin(IEnumerable<string> roles) =>
+            roles.Contains("Admin");
 
-            if (roleId == 0) return false;
+        // 🔹 Helper: cek permission berdasarkan role
+        private async Task<bool> HasPermission(IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
+        {
+            // Admin selalu lolos
+            if (IsAdmin(roleNames)) return true;
+
+            var roleIds = await _context.Roles
+                .Where(r => roleNames.Contains(r.Name))
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            if (!roleIds.Any()) return false;
 
             var permission = await _context.Permissions
-                .FirstOrDefaultAsync(p => p.RoleId == roleId && p.DocId == docId);
+                .FirstOrDefaultAsync(p => roleIds.Contains(p.RoleId) && p.DocId == docId);
 
             return permission != null && predicate(permission);
+        }
+        // 🔹 GET /api/document
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetAllDocuments()
+        {
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+
+            // Kalau Admin → return semua dokumen
+            if (roles.Contains("Admin"))
+            {
+                var allDocs = await _context.Documents.ToListAsync();
+                return Ok(allDocs.Select(d => new DocumentReadDto
+                {
+                    DocId = d.DocId,
+                    Title = d.Title,
+                    Description = d.Description,
+                    FilePath = d.FilePath,
+                    CreatedDate = d.CreatedDate,
+                    Status = d.Status
+                }));
+            }
+
+            // Kalau bukan Admin → filter by permission
+            var roleIds = await _context.Roles
+                .Where(r => roles.Contains(r.Name))
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            var docs = await _context.Permissions
+                .Where(p => roleIds.Contains(p.RoleId) && p.CanView)
+                .Select(p => p.Document)
+                .ToListAsync();
+
+            return Ok(docs.Select(d => new DocumentReadDto
+            {
+                DocId = d.DocId,
+                Title = d.Title,
+                Description = d.Description,
+                FilePath = d.FilePath,
+                CreatedDate = d.CreatedDate,
+                Status = d.Status
+            }));
         }
 
         // 🔹 GET /api/document/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (roleName == null) return Unauthorized();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            var canView = await HasPermission(roleName, id, p => p.CanView);
+            var canView = await HasPermission(roles, id, p => p.CanView);
             if (!canView) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);
@@ -64,11 +112,9 @@ namespace WebArsip.Api.Controllers
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (roleName == null) return Unauthorized();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            // karena dokumen baru → pakai doc dummy (DocId = 1) untuk cek izin upload
-            var canUpload = await HasPermission(roleName, 1, p => p.CanUpload);
+            var canUpload = await HasPermission(roles, 1, p => p.CanUpload); // Admin auto true
             if (!canUpload) return Forbid();
 
             var doc = new Document
@@ -98,10 +144,9 @@ namespace WebArsip.Api.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (roleName == null) return Unauthorized();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            var canEdit = await HasPermission(roleName, id, p => p.CanEdit);
+            var canEdit = await HasPermission(roles, id, p => p.CanEdit);
             if (!canEdit) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);
@@ -121,10 +166,9 @@ namespace WebArsip.Api.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (roleName == null) return Unauthorized();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            var canDelete = await HasPermission(roleName, id, p => p.CanDelete);
+            var canDelete = await HasPermission(roles, id, p => p.CanDelete);
             if (!canDelete) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);
@@ -135,14 +179,13 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 🔹 Archive endpoint khusus Compliance (pakai CanDelete = archive)
+        // 🔹 Archive endpoint
         [HttpPost("{id}/archive")]
         public async Task<IActionResult> ArchiveDocument(int id)
         {
-            var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-            if (roleName == null) return Unauthorized();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            var canArchive = await HasPermission(roleName, id, p => p.CanDelete);
+            var canArchive = await HasPermission(roles, id, p => p.CanDelete);
             if (!canArchive) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);

@@ -1,75 +1,107 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
-using WebArsip.Infrastructure.DbContexts;
 
 namespace WebArsip.Api.Controllers
 {
-    [Route("api/[Controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<Role> _roleManager;
         private readonly IConfiguration _config;
 
-        public AuthController(AppDbContext context, IConfiguration config)
+        public AuthController(UserManager<User> userManager, RoleManager<Role> roleManager, IConfiguration config)
         {
-            _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
             _config = config;
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<LoginResponseDto>> Login(LoginRequestDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.Password == dto.Password);
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null) return Unauthorized("Invalid credentials");
 
-            if (user == null)
+            // cek password
+            var check = await _userManager.CheckPasswordAsync(user, dto.Password);
+            if (!check) return Unauthorized("Invalid credentials");
 
-                return Unauthorized(new { message = "Email atau password salah" });
+            // ambil role dari UserManager
+            var roles = await _userManager.GetRolesAsync(user);
 
-            var token = GenerateJwtToken(user);
-
-            return new LoginResponseDto
+            // generate JWT
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
+            var claims = new List<Claim>
             {
-                UserId = user.UserId,
-                Name = user.Name,
-                Email = user.Email,
-                RoleName = user.Role.RoleName,
-                Message = "Login berhasil",
-                Token = token
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName ?? "")
             };
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(2),
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature),
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            var jwt = tokenHandler.WriteToken(token);
+
+            return Ok(new { Token = jwt });
         }
 
-        private string GenerateJwtToken(WebArsip.Core.Entities.User user)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var jwtSettings = _config.GetSection("Jwt");
-
-            var claims = new[]
+            var user = new User
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(ClaimTypes.Role, user.Role.RoleName),
-                new Claim("userId", user.UserId.ToString())
+                UserName = dto.Email,
+                Email = dto.Email,
+                Name = dto.Name
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
 
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwtSettings["ExpireMinutes"]!)),
-                signingCredentials: creds
-            );
+            // tambahkan role default (misal Compliance)
+            await _userManager.AddToRoleAsync(user, "Compliance");
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return Ok("User registered successfully");
         }
     }
+
+    /* DTO sederhana
+    public class LoginDto
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class RegisterDto
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }*/
 }

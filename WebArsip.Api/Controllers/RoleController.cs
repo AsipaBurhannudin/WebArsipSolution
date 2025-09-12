@@ -1,11 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
-using WebArsip.Infrastructure.DbContexts;
-using static WebArsip.Core.DTOs.RoleCreateDto;
 
 namespace WebArsip.Api.Controllers
 {
@@ -14,65 +11,94 @@ namespace WebArsip.Api.Controllers
     [Authorize]
     public class RoleController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly RoleManager<Role> _roleManager;
 
-        public RoleController(AppDbContext context)
+        public RoleController(RoleManager<Role> roleManager)
         {
-            _context = context;
+            _roleManager = roleManager;
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 GET: api/role
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<RoleReadDto>>> GetRoles()
+        public ActionResult<IEnumerable<RoleReadDto>> GetRoles()
         {
-            var roles = await _context.Roles.ToListAsync();
-            return roles.Select(r => new RoleReadDto { RoleId = r.RoleId, RoleName = r.RoleName }).ToList();
+            var roles = _roleManager.Roles.ToList();
+
+            return Ok(roles.Select(r => new RoleReadDto
+            {
+                RoleId = r.Id,
+                RoleName = r.Name
+            }).ToList());
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 GET: api/role/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<RoleReadDto>> GetRole(int id)
         {
-            var role = await _context.Roles.FindAsync(id);
+            var role = await _roleManager.FindByIdAsync(id.ToString());
             if (role == null) return NotFound();
 
-            return new RoleReadDto { RoleId = role.RoleId, RoleName = role.RoleName };
+            return new RoleReadDto
+            {
+                RoleId = role.Id,
+                RoleName = role.Name
+            };
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 POST: api/role
         [HttpPost]
         public async Task<ActionResult<RoleReadDto>> CreateRole(RoleCreateDto dto)
         {
-            var role = new Role { RoleName = dto.RoleName };
-            _context.Roles.Add(role);
-            await _context.SaveChangesAsync();
+            var role = new Role
+            {
+                Name = dto.RoleName,
+                NormalizedName = dto.RoleName.ToUpper()
+            };
 
-            return CreatedAtAction(nameof(GetRole), new { id = role.RoleId },
-                new RoleReadDto { RoleId = role.RoleId, RoleName = role.RoleName });
+            var result = await _roleManager.CreateAsync(role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return CreatedAtAction(nameof(GetRole), new { id = role.Id }, new RoleReadDto
+            {
+                RoleId = role.Id,
+                RoleName = role.Name
+            });
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 PUT: api/role/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(int id, RoleCreateDto dto)
         {
-            var role = await _context.Roles.FindAsync(id);
+            var role = await _roleManager.FindByIdAsync(id.ToString());
             if (role == null) return NotFound();
 
-            role.RoleName = dto.RoleName;
-            await _context.SaveChangesAsync();
+            role.Name = dto.RoleName;
+            role.NormalizedName = dto.RoleName.ToUpper();
+
+            var result = await _roleManager.UpdateAsync(role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
 
             return NoContent();
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 DELETE: api/role/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id)
         {
-            var role = await _context.Roles.FindAsync(id);
+            var role = await _roleManager.FindByIdAsync(id.ToString());
             if (role == null) return NotFound();
 
-            _context.Roles.Remove(role);
-            await _context.SaveChangesAsync();
+            var result = await _roleManager.DeleteAsync(role);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
 
             return NoContent();
         }

@@ -1,4 +1,4 @@
-﻿using System;
+﻿/*using System;
 
 namespace WebArsip.Core.DTOs
 {
@@ -12,7 +12,7 @@ namespace WebArsip.Core.DTOs
     }
 
     // DTO untuk Update
-    public class DocumentUpdateDto
+    public class DocumentReadDto
     {
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
@@ -30,4 +30,4 @@ namespace WebArsip.Core.DTOs
         public DateTime CreatedDate { get; set; }
         public string Status { get; set; } = "Active";
     }
-}
+}*/

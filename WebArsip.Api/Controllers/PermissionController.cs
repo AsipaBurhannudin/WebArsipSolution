@@ -7,10 +7,10 @@ using WebArsip.Infrastructure.DbContexts;
 
 namespace WebArsip.Api.Controllers
 {
-    [Route("api/[Controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class PermissionController : Controller
+    public class PermissionController : ControllerBase
     {
         private readonly AppDbContext _context;
 
@@ -31,7 +31,7 @@ namespace WebArsip.Api.Controllers
             {
                 PermissionId = p.PermissionId,
                 RoleId = p.RoleId,
-                RoleName = p.Role.RoleName,
+                RoleName = p.Role.Name,
                 DocId = p.DocId,
                 DocTitle = p.Document.Title,
                 CanView = p.CanView,
@@ -68,7 +68,7 @@ namespace WebArsip.Api.Controllers
             {
                 PermissionId = result.PermissionId,
                 RoleId = result.RoleId,
-                RoleName = result.Role.RoleName,
+                RoleName = result.Role.Name,
                 DocId = result.DocId,
                 DocTitle = result.Document.Title,
                 CanView = result.CanView,

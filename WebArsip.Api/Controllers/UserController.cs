@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
-using WebArsip.Infrastructure.DbContexts;
 
 namespace WebArsip.Api.Controllers
 {
@@ -12,96 +11,126 @@ namespace WebArsip.Api.Controllers
     [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly UserManager<User> _userManager;
+        private readonly RoleManager<Role> _roleManager;
 
-        public UserController(AppDbContext context)
+        public UserController(UserManager<User> userManager, RoleManager<Role> roleManager)
         {
-            _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 GET: api/user
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserReadDto>>> GetUsers()
         {
-            var users = await _context.Users.Include(u => u.Role).ToListAsync();
+            var users = _userManager.Users.ToList();
+            var roles = _roleManager.Roles.ToList();
 
-            return users.Select(u => new UserReadDto
+            var userDtos = new List<UserReadDto>();
+
+            foreach (var u in users)
             {
-                UserId = u.UserId,
-                Name = u.Name,
-                Email = u.Email,
-                RoleName = u.Role.RoleName
-            }).ToList();
+                // ✅ Pakai await, jangan .Result
+                var userRoles = await _userManager.GetRolesAsync(u);
+                var roleName = userRoles.FirstOrDefault() ?? "";
+
+                userDtos.Add(new UserReadDto
+                {
+                    UserId = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    RoleName = roleName
+                });
+            }
+
+            return Ok(userDtos);
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 GET: api/user/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<UserReadDto>> GetUser(int id)
         {
-            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == id);
+            var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null) return NotFound();
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var roleName = roles.FirstOrDefault() ?? "";
 
             return new UserReadDto
             {
-                UserId = user.UserId,
+                UserId = user.Id,
                 Name = user.Name,
                 Email = user.Email,
-                RoleName = user.Role.RoleName
+                RoleName = roleName
             };
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 POST: api/user
         [HttpPost]
         public async Task<ActionResult<UserReadDto>> CreateUser(UserCreateDto dto)
         {
             var user = new User
             {
-                Name = dto.Name,
+                UserName = dto.Email,
                 Email = dto.Email,
-                Password = dto.Password, // nanti bisa dihash
-                RoleId = dto.RoleId
+                Name = dto.Name
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            var result = await _userManager.CreateAsync(user, dto.Password);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
-            var result = new UserReadDto
+            // Tambah role
+            var role = await _roleManager.FindByIdAsync(dto.RoleId.ToString());
+            if (role != null)
+                await _userManager.AddToRoleAsync(user, role.Name);
+
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, new UserReadDto
             {
-                UserId = user.UserId,
+                UserId = user.Id,
                 Name = user.Name,
                 Email = user.Email,
-                RoleName = (await _context.Roles.FindAsync(user.RoleId))?.RoleName ?? ""
-            };
-
-            return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, result);
+                RoleName = role?.Name ?? ""
+            });
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 PUT: api/user/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UserUpdateDto dto)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null) return NotFound();
 
             user.Name = dto.Name;
             user.Email = dto.Email;
-            user.Password = dto.Password;
-            user.RoleId = dto.RoleId;
+            user.UserName = dto.Email;
 
-            await _context.SaveChangesAsync();
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            // Update role
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            var newRole = await _roleManager.FindByIdAsync(dto.RoleId.ToString());
+            if (newRole != null)
+                await _userManager.AddToRoleAsync(user, newRole.Name);
 
             return NoContent();
         }
 
-        //[Authorize(Roles = "Admin")]
+        // 🔹 DELETE: api/user/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userManager.FindByIdAsync(id.ToString());
             if (user == null) return NotFound();
 
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
             return NoContent();
         }

@@ -6,15 +6,11 @@ using System.Threading.Tasks;
 
 namespace WebArsip.Core.DTOs
 {
-    public class RoleCreateDto
+    public class UserReadDto
     {
+        public int UserId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
         public string RoleName { get; set; } = string.Empty;
-
-
-        public class RoleReadDto
-        {
-            public int RoleId { get; set; }
-            public string RoleName { get; set; } = string.Empty ;
-        }
     }
 }
