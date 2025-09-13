@@ -11,6 +11,7 @@ namespace WebArsip.Infrastructure.DbContexts
         public DbSet<Document> Documents { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<Archive> Archives { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

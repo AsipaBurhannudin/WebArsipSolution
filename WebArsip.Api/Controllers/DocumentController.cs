@@ -5,6 +5,7 @@ using System.Security.Claims;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
 using WebArsip.Infrastructure.DbContexts;
+using WebArsip.Infrastructure.Services;
 
 namespace WebArsip.Api.Controllers
 {
@@ -14,10 +15,12 @@ namespace WebArsip.Api.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly AuditLogService _auditLogService;
 
-        public DocumentController(AppDbContext context)
+        public DocumentController(AppDbContext context, AuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         //cek apakah user punya role Admin
@@ -59,6 +62,7 @@ namespace WebArsip.Api.Controllers
                     Description = d.Description,
                     FilePath = d.FilePath,
                     CreatedDate = d.CreatedDate,
+                    UpdatedAt = d.UpdatedAt,
                     Status = d.Status
                 }));
             }
@@ -81,6 +85,7 @@ namespace WebArsip.Api.Controllers
                 Description = d.Description,
                 FilePath = d.FilePath,
                 CreatedDate = d.CreatedDate,
+                UpdatedAt = d.UpdatedAt,
                 Status = d.Status
             }));
         }
@@ -104,6 +109,7 @@ namespace WebArsip.Api.Controllers
                 Description = doc.Description,
                 FilePath = doc.FilePath,
                 CreatedDate = doc.CreatedDate,
+                UpdatedAt = doc.UpdatedAt,
                 Status = doc.Status
             };
         }
@@ -117,17 +123,25 @@ namespace WebArsip.Api.Controllers
             var canUpload = await HasPermission(roles, 1, p => p.CanUpload); // Admin auto true
             if (!canUpload) return Forbid();
 
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            );
+
             var doc = new Document
             {
                 Title = dto.Title,
                 Description = dto.Description,
                 FilePath = dto.FilePath,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = wibNow,
                 Status = dto.Status
             };
 
             _context.Documents.Add(doc);
             await _context.SaveChangesAsync();
+
+            await _auditLogService.LogAsync(User, "CREATE", "Document", doc.DocId.ToString(),
+            $"Dokumen baru dibuat: {doc.Title}");
 
             return new DocumentReadDto
             {
@@ -152,13 +166,20 @@ namespace WebArsip.Api.Controllers
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            );
+
             doc.Title = dto.Title;
             doc.Description = dto.Description;
             doc.FilePath = dto.FilePath;
-            doc.UpdatedAt = DateTime.UtcNow;
+            doc.UpdatedAt = wibNow;
             doc.Status = dto.Status;
 
             await _context.SaveChangesAsync();
+            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(),
+            $"Dokumen diperbarui: {doc.Title}");
             return NoContent();
         }
 
@@ -176,6 +197,8 @@ namespace WebArsip.Api.Controllers
 
             _context.Documents.Remove(doc);
             await _context.SaveChangesAsync();
+            await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(),
+            $"Dokumen dihapus: {doc.Title}");
             return NoContent();
         }
 
@@ -191,14 +214,21 @@ namespace WebArsip.Api.Controllers
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow,
+            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            );
+
             var archive = new Archive
             {
                 DocId = doc.DocId,
-                ArchivedAt = DateTime.UtcNow
+                ArchivedAt = wibNow
             };
 
             _context.Archives.Add(archive);
             await _context.SaveChangesAsync();
+            await _auditLogService.LogAsync(User, "ARCHIVE", "Document", id.ToString(),
+            $"Dokumen diarsipkan: {doc.Title}");
 
             return Ok(new { message = $"Document {doc.Title} archived successfully" });
         }

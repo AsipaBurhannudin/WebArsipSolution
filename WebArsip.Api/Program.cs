@@ -6,12 +6,16 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using WebArsip.Core.Entities;
 using WebArsip.Infrastructure.DbContexts;
+using WebArsip.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Db Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<AuditLogService>();
 
 // Identity
 builder.Services.AddIdentityCore<User>(options => {
