@@ -10,7 +10,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // semua endpoint butuh login
+    [Authorize]
     public class DocumentController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -20,14 +20,14 @@ namespace WebArsip.Api.Controllers
             _context = context;
         }
 
-        // 🔹 Helper: cek apakah user punya role Admin
+        //cek apakah user punya role Admin
         private bool IsAdmin(IEnumerable<string> roles) =>
             roles.Contains("Admin");
 
-        // 🔹 Helper: cek permission berdasarkan role
+        //cek permission berdasarkan role
         private async Task<bool> HasPermission(IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
         {
-            // Admin selalu lolos
+            // Akses Bypass untuk admin
             if (IsAdmin(roleNames)) return true;
 
             var roleIds = await _context.Roles
@@ -42,13 +42,13 @@ namespace WebArsip.Api.Controllers
 
             return permission != null && predicate(permission);
         }
-        // 🔹 GET /api/document
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetAllDocuments()
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            // Kalau Admin → return semua dokumen
+            // Return all kalau admin
             if (roles.Contains("Admin"))
             {
                 var allDocs = await _context.Documents.ToListAsync();
@@ -63,7 +63,7 @@ namespace WebArsip.Api.Controllers
                 }));
             }
 
-            // Kalau bukan Admin → filter by permission
+            // Role kena filter permission kalau bukan admin
             var roleIds = await _context.Roles
                 .Where(r => roles.Contains(r.Name))
                 .Select(r => r.Id)
@@ -85,7 +85,7 @@ namespace WebArsip.Api.Controllers
             }));
         }
 
-        // 🔹 GET /api/document/{id}
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
@@ -108,7 +108,7 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 🔹 POST /api/document
+        
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
@@ -140,7 +140,7 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 🔹 PUT /api/document/{id}
+        
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
@@ -162,7 +162,7 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 🔹 DELETE /api/document/{id}
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
@@ -179,7 +179,7 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 🔹 Archive endpoint
+        
         [HttpPost("{id}/archive")]
         public async Task<IActionResult> ArchiveDocument(int id)
         {

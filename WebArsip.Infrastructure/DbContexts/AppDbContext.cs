@@ -20,7 +20,7 @@ namespace WebArsip.Infrastructure.DbContexts
             {
                 entity.HasKey(d => d.DocId);
 
-                // One-to-Many: Document → Archives
+                // Relasi One to Many: Document ke archive
                 entity.HasMany(d => d.Archives)
                       .WithOne(a => a.Document)
                       .HasForeignKey(a => a.DocId)
@@ -31,7 +31,22 @@ namespace WebArsip.Infrastructure.DbContexts
             {
                 entity.HasKey(a => a.ArchiveId);
             });
+
+            // Migrasi Seeding data ke DB
+            modelBuilder.Entity<Permission>().HasData(
+                // Admin (full akses)
+                new Permission { PermissionId = 1, RoleId = 1, DocId = 2, CanView = true, CanUpload = true, CanEdit = true, CanDelete = true },
+
+                // Compliance (view + archive/delete)
+                new Permission { PermissionId = 2, RoleId = 2, DocId = 2, CanView = true, CanUpload = false, CanEdit = false, CanDelete = true },
+
+                // Audit (hanya view)
+                new Permission { PermissionId = 3, RoleId = 3, DocId = 2, CanView = true, CanUpload = false, CanEdit = false, CanDelete = false },
+
+                // Policy (view + upload + edit)
+                new Permission { PermissionId = 4, RoleId = 4, DocId = 2, CanView = true, CanUpload = true, CanEdit = true, CanDelete = false }
+            );
         }
+    }
 
     }
-}

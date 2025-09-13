@@ -84,24 +84,10 @@ namespace WebArsip.Api.Controllers
                 return BadRequest(result.Errors);
             }
 
-            // tambahkan role default (misal Compliance)
+            // menambahkan role default, contohnya compliance
             await _userManager.AddToRoleAsync(user, "Compliance");
 
             return Ok("User registered successfully");
         }
     }
-
-    /* DTO sederhana
-    public class LoginDto
-    {
-        public string Email { get; set; }
-        public string Password { get; set; }
-    }
-
-    public class RegisterDto
-    {
-        public string Name { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-    }*/
 }

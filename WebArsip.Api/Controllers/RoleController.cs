@@ -18,7 +18,6 @@ namespace WebArsip.Api.Controllers
             _roleManager = roleManager;
         }
 
-        // 🔹 GET: api/role
         [HttpGet]
         public ActionResult<IEnumerable<RoleReadDto>> GetRoles()
         {
@@ -31,7 +30,6 @@ namespace WebArsip.Api.Controllers
             }).ToList());
         }
 
-        // 🔹 GET: api/role/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<RoleReadDto>> GetRole(int id)
         {
@@ -45,7 +43,6 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 🔹 POST: api/role
         [HttpPost]
         public async Task<ActionResult<RoleReadDto>> CreateRole(RoleCreateDto dto)
         {
@@ -68,7 +65,6 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 🔹 PUT: api/role/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRole(int id, RoleCreateDto dto)
         {
@@ -87,7 +83,6 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 🔹 DELETE: api/role/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRole(int id)
         {

@@ -9,11 +9,11 @@ using WebArsip.Infrastructure.DbContexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Tambahkan DbContext
+// Db Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 🔹 Tambahkan Identity
+// Identity
 builder.Services.AddIdentityCore<User>(options => {
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
@@ -22,7 +22,7 @@ builder.Services.AddIdentityCore<User>(options => {
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-// 🔹 Tambahkan Authentication JWT
+// Autentikasi JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -42,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 
-// 🔹 Swagger dengan JWT Support
+// Swagger + JWT Support
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebArsip API", Version = "v1" });
@@ -78,7 +78,7 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-// 🔹 Seeding default Role & Admin User
+// Seeding default data untuk Role & Admin User
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -115,17 +115,17 @@ using (var scope = app.Services.CreateScope())
         }
 
 
-        // 🔹 Seed default permission untuk Admin
+        // Seed default data permission untuk Admin
         var adminRole = await roleManager.FindByNameAsync("Admin");
 
         if (adminRole != null)
         {
-            // cek apakah sudah ada permission untuk Admin
+            // cek admin sudah punya permission atau belum
             bool hasPermission = await context.Permissions.AnyAsync(p => p.RoleId == adminRole.Id);
 
             if (!hasPermission)
             {
-                // kasih full akses untuk semua dokumen yang ada
+                // full akses untuk semua dokumen yang ada
                 var documents = await context.Documents.ToListAsync();
                 foreach (var doc in documents)
                 {
@@ -167,7 +167,7 @@ app.Use(async (context, next) =>
         context.Response.Headers.ContainsKey("Location") &&
         context.Response.Headers["Location"].ToString().Contains("/Account/Login"))
     {
-        context.Response.StatusCode = 401; // Unauthorized, bukan redirect
+        context.Response.StatusCode = 401; // Unauthorized, nanti ganti jadi redirect
         return;
     }
     await next();

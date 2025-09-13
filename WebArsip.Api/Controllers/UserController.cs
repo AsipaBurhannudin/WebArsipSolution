@@ -20,7 +20,6 @@ namespace WebArsip.Api.Controllers
             _roleManager = roleManager;
         }
 
-        // 🔹 GET: api/user
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserReadDto>>> GetUsers()
         {
@@ -31,7 +30,6 @@ namespace WebArsip.Api.Controllers
 
             foreach (var u in users)
             {
-                // ✅ Pakai await, jangan .Result
                 var userRoles = await _userManager.GetRolesAsync(u);
                 var roleName = userRoles.FirstOrDefault() ?? "";
 
@@ -47,7 +45,6 @@ namespace WebArsip.Api.Controllers
             return Ok(userDtos);
         }
 
-        // 🔹 GET: api/user/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<UserReadDto>> GetUser(int id)
         {
@@ -66,7 +63,6 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 🔹 POST: api/user
         [HttpPost]
         public async Task<ActionResult<UserReadDto>> CreateUser(UserCreateDto dto)
         {
@@ -95,7 +91,6 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 🔹 PUT: api/user/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, UserUpdateDto dto)
         {
@@ -121,7 +116,6 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 🔹 DELETE: api/user/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
