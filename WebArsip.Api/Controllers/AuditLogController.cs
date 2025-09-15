@@ -8,7 +8,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Admin")] // hanya admin yang bisa akses log
+    [Authorize(Roles = "Admin")]
     public class AuditLogController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -18,28 +18,63 @@ namespace WebArsip.Api.Controllers
             _context = context;
         }
 
-        // 🔹 GET: api/auditlog
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuditLogReadDto>>> GetLogs()
+        public async Task<ActionResult<PagedResult<AuditLogReadDto>>> GetLogs([FromQuery] AuditLogQueryDto query)
         {
-            var logs = await _context.AuditLogs
+            var logsQuery = _context.AuditLogs.AsQueryable();
+
+            if (!query.From.HasValue && !query.To.HasValue)
+            {
+                var defaultFrom = DateTime.UtcNow.AddDays(-30);
+                logsQuery = logsQuery.Where(l => l.Timestamp >= defaultFrom);
+            }
+            else
+            {
+                if (query.From.HasValue)
+                    logsQuery = logsQuery.Where(l => l.Timestamp >= query.From.Value);
+
+                if (query.To.HasValue)
+                    logsQuery = logsQuery.Where(l => l.Timestamp <= query.To.Value);
+            }
+
+            if (!string.IsNullOrEmpty(query.UserId))
+                logsQuery = logsQuery.Where(l => l.UserId == query.UserId);
+
+            if (!string.IsNullOrEmpty(query.Action))
+                logsQuery = logsQuery.Where(l => l.Action == query.Action);
+
+
+            var page = query.Page <= 0 ? 1 : query.Page;
+            var pageSize = query.PageSize <= 0 ? 20 : (query.PageSize > 100 ? 100 : query.PageSize);
+
+            var totalCount = await logsQuery.CountAsync();
+
+            var logs = await logsQuery
                 .OrderByDescending(l => l.Timestamp)
-                .Take(100) // ambil 100 terbaru
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return logs.Select(l => new AuditLogReadDto
+            var result = new PagedResult<AuditLogReadDto>
             {
-                AuditLogId = l.AuditLogId,
-                UserId = l.UserId,
-                Action = l.Action,
-                EntityName = l.EntityName,
-                EntityId = l.EntityId,
-                Timestamp = l.Timestamp,
-                Details = l.Details
-            }).ToList();
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                Items = logs.Select(l => new AuditLogReadDto
+                {
+                    AuditLogId = l.AuditLogId,
+                    UserId = l.UserId,
+                    Action = l.Action,
+                    EntityName = l.EntityName,
+                    EntityId = l.EntityId,
+                    Timestamp = l.Timestamp,
+                    Details = l.Details
+                })
+            };
+
+            return Ok(result);
         }
 
-        // 🔹 GET: api/auditlog/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<AuditLogReadDto>> GetLog(int id)
         {
@@ -56,6 +91,39 @@ namespace WebArsip.Api.Controllers
                 Timestamp = log.Timestamp,
                 Details = log.Details
             };
+        }
+
+        [HttpGet("daily-stats")]
+        public async Task<ActionResult<IEnumerable<AuditLogRoleStatsDto>>> GetDailyStats(
+    int days = 7)
+        {
+            var utcNow = DateTime.UtcNow;
+            var startDate = utcNow.AddDays(-days);
+
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            var logs = await _context.AuditLogs
+                .Where(l => l.Timestamp >= startDate)
+                .ToListAsync();
+
+            var stats = logs
+                .GroupBy(l => new
+                {
+                    l.UserId,
+                    l.Action,
+                    Date = TimeZoneInfo.ConvertTimeFromUtc(l.Timestamp, tz).Date
+                })
+                .Select(g => new AuditLogRoleStatsDto
+                {
+                    UserId = g.Key.UserId,
+                    Action = g.Key.Action,
+                    Count = g.Count(),
+                    Date = g.Key.Date
+                })
+                .OrderBy(s => s.Date)
+                .ToList();
+
+            return Ok(stats);
         }
     }
 }

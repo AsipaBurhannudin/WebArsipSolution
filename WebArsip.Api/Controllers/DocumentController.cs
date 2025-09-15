@@ -216,7 +216,7 @@ namespace WebArsip.Api.Controllers
 
             var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
             DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            TimeZoneInfo.FindSystemTimeZoneById("SEA Time")
             );
 
             var archive = new Archive

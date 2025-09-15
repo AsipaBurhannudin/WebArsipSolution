@@ -28,11 +28,11 @@ namespace WebArsip.Api.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             var user = await _userManager.FindByEmailAsync(dto.Email);
-            if (user == null) return Unauthorized("Invalid credentials");
+            if (user == null) return Unauthorized("Email Anda Salah!");
 
             // cek password
             var check = await _userManager.CheckPasswordAsync(user, dto.Password);
-            if (!check) return Unauthorized("Invalid credentials");
+            if (!check) return Unauthorized("Password Anda Salah!");
 
             // ambil role dari UserManager
             var roles = await _userManager.GetRolesAsync(user);
