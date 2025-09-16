@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.ComponentModel;
 using System.Text;
 using WebArsip.Core.Entities;
 using WebArsip.Infrastructure.DbContexts;
 using WebArsip.Infrastructure.Services;
+//using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,8 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+
+//OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 var app = builder.Build();
 

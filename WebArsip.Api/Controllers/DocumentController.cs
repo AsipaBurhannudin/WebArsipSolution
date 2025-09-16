@@ -45,40 +45,14 @@ namespace WebArsip.Api.Controllers
 
             return permission != null && predicate(permission);
         }
-        
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetAllDocuments()
         {
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            // ✅ Semua role bisa lihat semua dokumen
+            var allDocs = await _context.Documents.ToListAsync();
 
-            // Return all kalau admin
-            if (roles.Contains("Admin"))
-            {
-                var allDocs = await _context.Documents.ToListAsync();
-                return Ok(allDocs.Select(d => new DocumentReadDto
-                {
-                    DocId = d.DocId,
-                    Title = d.Title,
-                    Description = d.Description,
-                    FilePath = d.FilePath,
-                    CreatedDate = d.CreatedDate,
-                    UpdatedAt = d.UpdatedAt,
-                    Status = d.Status
-                }));
-            }
-
-            // Role kena filter permission kalau bukan admin
-            var roleIds = await _context.Roles
-                .Where(r => roles.Contains(r.Name))
-                .Select(r => r.Id)
-                .ToListAsync();
-
-            var docs = await _context.Permissions
-                .Where(p => roleIds.Contains(p.RoleId) && p.CanView)
-                .Select(p => p.Document)
-                .ToListAsync();
-
-            return Ok(docs.Select(d => new DocumentReadDto
+            return Ok(allDocs.Select(d => new DocumentReadDto
             {
                 DocId = d.DocId,
                 Title = d.Title,
@@ -90,15 +64,10 @@ namespace WebArsip.Api.Controllers
             }));
         }
 
-        
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-
-            var canView = await HasPermission(roles, id, p => p.CanView);
-            if (!canView) return Forbid();
-
+            // ✅ Semua role bisa lihat detail dokumen
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
@@ -114,7 +83,7 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        
+
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {

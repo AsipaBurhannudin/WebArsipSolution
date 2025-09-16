@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OfficeOpenXml;
 using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.DTOs;
 using WebArsip.Infrastructure.DbContexts;
@@ -125,5 +127,65 @@ namespace WebArsip.Api.Controllers
 
             return Ok(stats);
         }
+
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportAuditLogs([FromQuery] int limit = 1000)
+        {
+            var logs = await _context.AuditLogs
+                .OrderByDescending(l => l.Timestamp)
+                .Take(limit)
+                .ToListAsync();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("AuditLogId,UserId,Action,EntityName,EntityId,Timestamp,Details");
+
+            foreach (var log in logs)
+            {
+                csv.AppendLine($"{log.AuditLogId},{log.UserId},{log.Action},{log.EntityName},{log.EntityId},{log.Timestamp:yyyy-MM-dd HH:mm:ss},{log.Details}");
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(csv.ToString());
+            return File(bytes, "text/csv", "auditlogs.csv");
+        }
+
+        /*[HttpGet("export/excel")]
+        public async Task<IActionResult> ExportAuditLogsExcel([FromQuery] int limit = 1000)
+        {
+            var logs = await _context.AuditLogs
+                .OrderByDescending(l => l.Timestamp)
+                .Take(limit)
+                .ToListAsync();
+
+            using var package = new ExcelPackage();
+            var worksheet = package.Workbook.Worksheets.Add("AuditLogs");
+
+            // Header
+            worksheet.Cells[1, 1].Value = "AuditLogId";
+            worksheet.Cells[1, 2].Value = "UserId";
+            worksheet.Cells[1, 3].Value = "Action";
+            worksheet.Cells[1, 4].Value = "EntityName";
+            worksheet.Cells[1, 5].Value = "EntityId";
+            worksheet.Cells[1, 6].Value = "Timestamp";
+            worksheet.Cells[1, 7].Value = "Details";
+
+            // Isi data
+            for (int i = 0; i < logs.Count; i++)
+            {
+                var log = logs[i];
+                worksheet.Cells[i + 2, 1].Value = log.AuditLogId;
+                worksheet.Cells[i + 2, 2].Value = log.UserId;
+                worksheet.Cells[i + 2, 3].Value = log.Action;
+                worksheet.Cells[i + 2, 4].Value = log.EntityName;
+                worksheet.Cells[i + 2, 5].Value = log.EntityId;
+                worksheet.Cells[i + 2, 6].Value = log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
+                worksheet.Cells[i + 2, 7].Value = log.Details;
+            }
+
+            // Auto fit biar rapih
+            worksheet.Cells.AutoFitColumns();
+
+            var bytes = package.GetAsByteArray();
+            return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "auditlogs.xlsx");
+        }*/
     }
 }

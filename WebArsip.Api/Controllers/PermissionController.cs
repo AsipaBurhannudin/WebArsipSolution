@@ -9,7 +9,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     public class PermissionController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -18,7 +18,7 @@ namespace WebArsip.Api.Controllers
         {
             _context = context;
         }
-
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PermissionReadDto>>> GetPermissions()
         {
