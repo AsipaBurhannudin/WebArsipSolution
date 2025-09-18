@@ -1,0 +1,25 @@
+﻿@model IEnumerable<WebArsip.Mvc.Models.DocumentViewModel>
+
+<h2>Daftar Dokumen</h2>
+
+<table border="1" cellpadding="5">
+    <tr>
+        <th>DocId</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Status</th>
+        <th>CreatedDate</th>
+        <th>UpdatedAt</th>
+    </tr>
+    @foreach (var doc in Model)
+    {
+        <tr>
+            <td>@doc.DocId</td>
+            <td>@doc.Title</td>
+            <td>@doc.Description</td>
+            <td>@doc.Status</td>
+            <td>@doc.CreatedDate</td>
+            <td>@doc.UpdatedAt</td>
+        </tr>
+    }
+</table>

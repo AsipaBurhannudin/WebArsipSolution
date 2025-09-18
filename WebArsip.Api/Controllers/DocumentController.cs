@@ -49,7 +49,6 @@ namespace WebArsip.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetAllDocuments()
         {
-            // ✅ Semua role bisa lihat semua dokumen
             var allDocs = await _context.Documents.ToListAsync();
 
             return Ok(allDocs.Select(d => new DocumentReadDto
@@ -67,7 +66,6 @@ namespace WebArsip.Api.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
-            // ✅ Semua role bisa lihat detail dokumen
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
