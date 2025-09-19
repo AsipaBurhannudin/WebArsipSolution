@@ -1,60 +1,59 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
-using WebArsip.Mvc.DTOs;
 using WebArsip.Mvc.Models;
 
 namespace WebArsip.Mvc.Controllers
 {
     public class AuthController : Controller
     {
-        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IHttpClientFactory _clientFactory;
 
-        public AuthController(IHttpClientFactory httpClientFactory)
+        public AuthController(IHttpClientFactory clientFactory)
         {
-            _httpClientFactory = httpClientFactory;
+            _clientFactory = clientFactory;
         }
 
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login(string? returnUrl = null)
         {
+            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel login)
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
-            if (!ModelState.IsValid)
-                return View(login);
+            if (!ModelState.IsValid) return View(model);
 
-            var client = _httpClientFactory.CreateClient("API");
-
-            // call API /api/auth/login
-            var response = await client.PostAsJsonAsync("http://localhost:5287/api/auth/login",login);
+            var client = _clientFactory.CreateClient("WebArsipApi");
+            var response = await client.PostAsJsonAsync("auth/login", model);
 
             if (!response.IsSuccessStatusCode)
             {
-                ModelState.AddModelError("", "Login gagal, cek email atau password.");
-                return View(login);
+                ModelState.AddModelError("", "Login gagal, periksa email/password.");
+                return View(model);
             }
 
-            var result = await response.Content.ReadFromJsonAsync<LoginResponseDto>();
-
-            if (string.IsNullOrEmpty(result?.Token))
+            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            if (result?.Token == null)
             {
-                ModelState.AddModelError("", "Token tidak valid dari server.");
-                return View(login);
+                ModelState.AddModelError("", "Token tidak valid.");
+                return View(model);
             }
 
-            // Simpan token di session
-            HttpContext.Session.SetString("JWTToken", result.Token);
+            // Simpan token ke session
+            HttpContext.Session.SetString("JWToken", result.Token);
 
+            // Redirect sesuai returnUrl kalau ada
+            if (!string.IsNullOrEmpty(returnUrl))
+                return Redirect(returnUrl);
+
+            // Default ke Home
             return RedirectToAction("Index", "Home");
         }
 
-        [HttpGet]
         public IActionResult Logout()
         {
-            HttpContext.Session.Remove("JWTToken");
+            HttpContext.Session.Remove("JWToken");
             return RedirectToAction("Login", "Auth");
         }
     }

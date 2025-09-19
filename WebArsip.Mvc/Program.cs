@@ -28,11 +28,14 @@ builder.Services.AddHttpContextAccessor();
 // HttpClient untuk API + Add Message Handler
 builder.Services.AddTransient<JwtAuthorizationHandler>();
 
-builder.Services.AddHttpClient("API", client =>
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"];
+
+builder.Services.AddHttpClient("WebArsipApi", client =>
 {
-    client.BaseAddress = new Uri("http://localhost:5287/api"); // ganti sesuai API
-})
-.AddHttpMessageHandler<JwtAuthorizationHandler>();
+    client.BaseAddress = new Uri(apiBaseUrl!);
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
 var app = builder.Build();
 
