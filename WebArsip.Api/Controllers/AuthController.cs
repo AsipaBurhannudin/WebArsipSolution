@@ -30,19 +30,17 @@ namespace WebArsip.Api.Controllers
             var user = await _userManager.FindByEmailAsync(dto.Email);
             if (user == null) return Unauthorized("Email Anda Salah!");
 
-            // cek password
             var check = await _userManager.CheckPasswordAsync(user, dto.Password);
             if (!check) return Unauthorized("Password Anda Salah!");
 
-            // ambil role dari UserManager
             var roles = await _userManager.GetRolesAsync(user);
 
-            // generate JWT
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.UserName ?? "")
             };
 
@@ -84,7 +82,6 @@ namespace WebArsip.Api.Controllers
                 return BadRequest(result.Errors);
             }
 
-            // menambahkan role default, contohnya compliance
             await _userManager.AddToRoleAsync(user, "Compliance");
 
             return Ok("User registered successfully");

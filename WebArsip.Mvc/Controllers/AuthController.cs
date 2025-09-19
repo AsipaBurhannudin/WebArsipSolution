@@ -3,6 +3,7 @@ using WebArsip.Mvc.Models;
 
 namespace WebArsip.Mvc.Controllers
 {
+    [Route("auth")]
     public class AuthController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -12,14 +13,14 @@ namespace WebArsip.Mvc.Controllers
             _clientFactory = clientFactory;
         }
 
-        [HttpGet]
+        [HttpGet("login")]
         public IActionResult Login(string? returnUrl = null)
         {
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
 
-        [HttpPost]
+        [HttpPost("login")]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
             if (!ModelState.IsValid) return View(model);
@@ -29,31 +30,33 @@ namespace WebArsip.Mvc.Controllers
 
             if (!response.IsSuccessStatusCode)
             {
-                ModelState.AddModelError("", "Login gagal, periksa email/password.");
+                TempData["ErrorMessage"] = "Login gagal, periksa email/password.";
                 return View(model);
             }
 
             var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
             if (result?.Token == null)
             {
-                ModelState.AddModelError("", "Token tidak valid.");
+                TempData["ErrorMessage"] = "Token tidak valid.";
                 return View(model);
             }
 
-            // Simpan token ke session
             HttpContext.Session.SetString("JWToken", result.Token);
+            HttpContext.Session.SetString("UserEmail", model.Email);
 
-            // Redirect sesuai returnUrl kalau ada
             if (!string.IsNullOrEmpty(returnUrl))
                 return Redirect(returnUrl);
 
-            // Default ke Home
+            TempData["SuccessMessage"] = "Login berhasil, selamat datang!";
             return RedirectToAction("Index", "Home");
         }
 
+        [HttpPost("logout")]
+        [ValidateAntiForgeryToken]
         public IActionResult Logout()
         {
-            HttpContext.Session.Remove("JWToken");
+            HttpContext.Session.Clear();
+            TempData["SuccessMessage"] = "Anda berhasil logout.";
             return RedirectToAction("Login", "Auth");
         }
     }

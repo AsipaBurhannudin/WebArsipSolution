@@ -4,6 +4,7 @@ using WebArsip.Mvc.Models;
 
 namespace WebArsip.Mvc.Controllers
 {
+    [Route("Document")]
     public class DocumentController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -18,7 +19,6 @@ namespace WebArsip.Mvc.Controllers
             var token = HttpContext.Session.GetString("JWToken");
             if (string.IsNullOrEmpty(token))
             {
-                // Kalau belum login, redirect ke login + simpan returnUrl
                 return RedirectToAction("Login", "Auth", new { returnUrl = Url.Action("Index", "Document") });
             }
 
