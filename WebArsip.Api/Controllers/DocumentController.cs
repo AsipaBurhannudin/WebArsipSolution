@@ -47,20 +47,53 @@ namespace WebArsip.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DocumentReadDto>>> GetAllDocuments()
+        public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
-            var allDocs = await _context.Documents.ToListAsync();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            return Ok(allDocs.Select(d => new DocumentReadDto
+            // Admin → bypass, dapat semua dokumen
+            IQueryable<Document> docsQuery = _context.Documents;
+
+            if (!roles.Contains("Admin"))
             {
-                DocId = d.DocId,
-                Title = d.Title,
-                Description = d.Description,
-                FilePath = d.FilePath,
-                CreatedDate = d.CreatedDate,
-                UpdatedAt = d.UpdatedAt,
-                Status = d.Status
-            }));
+                var roleIds = await _context.Roles
+                    .Where(r => roles.Contains(r.Name))
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                docsQuery = _context.Permissions
+                    .Where(p => roleIds.Contains(p.RoleId) && p.CanView)
+                    .Select(p => p.Document);
+            }
+
+            // hitung total
+            var totalCount = await docsQuery.CountAsync();
+
+            // ambil sesuai pagination
+            var docs = await docsQuery
+                .OrderByDescending(d => d.CreatedDate)
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            var result = new PagedResult<DocumentReadDto>
+            {
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalCount = totalCount,
+                Items = docs.Select(d => new DocumentReadDto
+                {
+                    DocId = d.DocId,
+                    Title = d.Title,
+                    Description = d.Description,
+                    FilePath = d.FilePath,
+                    CreatedDate = d.CreatedDate,
+                    UpdatedAt = d.UpdatedAt,
+                    Status = d.Status
+                }).ToList()
+            };
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -198,6 +231,13 @@ namespace WebArsip.Api.Controllers
             $"Dokumen diarsipkan: {doc.Title}");
 
             return Ok(new { message = $"Document {doc.Title} archived successfully" });
+        }
+
+        [HttpGet("count")]
+        public async Task<ActionResult<int>> GetDocumentCount()
+        {
+            var count = await _context.Documents.CountAsync();
+            return Ok(count);
         }
     }
 }

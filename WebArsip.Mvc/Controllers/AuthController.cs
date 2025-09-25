@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebArsip.Mvc.Models;
+using WebArsip.Mvc.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {
@@ -48,7 +48,7 @@ namespace WebArsip.Mvc.Controllers
                 return Redirect(returnUrl);
 
             TempData["SuccessMessage"] = "Login berhasil, selamat datang!";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Index", "Dashboard");
         }
 
         [HttpPost("logout")]

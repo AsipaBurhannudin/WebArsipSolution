@@ -5,6 +5,7 @@ using OfficeOpenXml;
 using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.DTOs;
 using WebArsip.Infrastructure.DbContexts;
+using WebArsip.Core.DTOs.WebArsip.Core.DTOs;
 
 namespace WebArsip.Api.Controllers
 {
@@ -71,7 +72,7 @@ namespace WebArsip.Api.Controllers
                     EntityId = l.EntityId,
                     Timestamp = l.Timestamp,
                     Details = l.Details
-                })
+                }).ToList()
             };
 
             return Ok(result);
@@ -146,6 +147,13 @@ namespace WebArsip.Api.Controllers
 
             var bytes = Encoding.UTF8.GetBytes(csv.ToString());
             return File(bytes, "text/csv", "auditlogs.csv");
+        }
+
+        [HttpGet("count")]
+        public async Task<ActionResult<int>> GetLogCount()
+        {
+            var count = await _context.AuditLogs.CountAsync();
+            return Ok(count);
         }
 
         /*[HttpGet("export/excel")]

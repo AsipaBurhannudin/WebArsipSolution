@@ -1,4 +1,4 @@
-namespace WebArsip.Mvc.Models
+namespace WebArsip.Mvc.ViewModels
 {
     public class ErrorViewModel
     {

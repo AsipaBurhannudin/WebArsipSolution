@@ -1,33 +1,109 @@
-﻿@model WebArsip.Mvc.Models.LoginViewModel
+﻿@using WebArsip.Mvc.ViewModels;
+@model LoginViewModel
 
 @{
     ViewData["Title"] = "Login";
+    Layout = "_LayoutPublic";
 }
 
-<h2>Login</h2>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WebArsip</title>
+    <link rel="stylesheet" href="~/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h2>Selamat Datang</h2>
+                    <p>Sign in to your account</p>
+                </div>
 
-<form asp-action="Login" method="post">
-    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <form asp-action="Login" method="post" id="loginForm">
+                    <!-- email -->
+                    <div class="form-group">
+                        <div class="input-wrapper">
+                            <input asp-for="Email" type="email" id="email" required autocomplete="email" placeholder=" " />
+                            <label for="email">Email</label>
+                            <span class="focus-border"></span>
+                        </div>
+                        <span class="text-danger" asp-validation-for="Email"></span>
+                    </div>
 
-    <div class="form-group">
-        <label asp-for="Email"></label>
-        <input asp-for="Email" class="form-control" />
+                    <!-- password -->
+                    <div class="form-group">
+                        <div class="input-wrapper password-wrapper">
+                            <input asp-for="Password" type="password" id="password" required autocomplete="current-password" placeholder="" />
+                            <label for="password">Password</label>
+                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                                <span class="eye-icon"></span>
+                            </button>
+                            <span class="focus-border"></span>
+                        </div>
+                        <span class="text-danger" asp-validation-for="Password"></span>
+                    </div>
+
+                    <!-- tombol login -->
+                    <button type="submit" class="login-btn btn" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
+    <script>
+        // Toast setup
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
 
-    <div class="form-group">
-        <label asp-for="Password"></label>
-        <input asp-for="Password" type="password" class="form-control" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Login</button>
-</form>
-
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="text-danger mt-2">
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        // Success (login/logout)
+        @if (TempData["SuccessMessage"] != null)
         {
-            <p>@error.ErrorMessage</p>
+            <text>
+                        Toast.fire({
+                            icon: 'success',
+                            title: '@TempData["SuccessMessage"]'
+                        });
+            </text>
         }
-    </div>
-}
+
+        // Error (misalnya password salah / login gagal)
+        @if (!ViewData.ModelState.IsValid)
+        {
+            var errors = string.Join("\\n", ViewData.ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+            if (!string.IsNullOrEmpty(errors))
+            {
+                <text>
+                                    Toast.fire({
+                                        icon: 'error',
+                                        title: '@TempData["ErrorMessage"]'
+                                    });
+                </text>
+            }
+        }
+
+         window.serverErrors = [];
+        @if (!ViewData.ModelState.IsValid)
+        {
+            foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+            {
+                <text>window.serverErrors.push("@error.ErrorMessage");</text>
+            }
+        }
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/login.js"></script>
+</body>
+</html>

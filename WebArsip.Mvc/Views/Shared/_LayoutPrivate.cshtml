@@ -1,0 +1,96 @@
+﻿@using WebArsip.Mvc.Helpers
+@{
+    var email = UserRoleHelper.GetUserEmail(Context);
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"] - WebArsip</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div id="wrapper">
+        <!-- 🔹 Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading text-white p-3">📂 WebArsip</div>
+            <div class="list-group list-group-flush">
+                <a asp-controller="Dashboard" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                    🏠 <span>Dashboard</span>
+                </a>
+                <a asp-controller="Document" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
+                    📄 <span>Documents</span>
+                </a>
+                <a asp-controller="User" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
+                    👤 <span>Users</span>
+                </a>
+                <a asp-controller="Role" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")">
+                    🔑 <span>Roles</span>
+                </a>
+                <a asp-controller="Permission" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")">
+                    ⚙ <span>Permissions</span>
+                </a>
+                <a asp-controller="AuditLog" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLog" ? "active" : "")">
+                    📜 <span>Audit Logs</span>
+                </a>
+            </div>
+            <form asp-controller="Auth" asp-action="Logout" method="post" class="p-3">
+                <button type="submit" class="btn btn-danger w-100">🚪 Logout</button>
+            </form>
+        </div>
+
+        <!-- 🔹 Content -->
+        <div id="page-content-wrapper">
+            <!-- Navbar Fixed -->
+            <nav class="navbar navbar-light bg-light border-bottom">
+                <div class="container-fluid">
+                    <button class="btn btn-outline-secondary" id="menu-toggle">☰</button>
+                    <span class="navbar-text ms-auto">
+                        <strong>@email</strong>
+                    </span>
+                </div>
+            </nav>
+
+            <!-- Content Body -->
+            <div class="container-fluid">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery & Bootstrap -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Toggle Sidebar -->
+    <script>
+        $("#menu-toggle").click(function (e) {
+            e.preventDefault();
+            $("#wrapper").toggleClass("toggled");
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

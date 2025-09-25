@@ -1,0 +1,36 @@
+﻿@model WebArsip.Mvc.ViewModels.DocumentViewModel
+@{
+    ViewData["Title"] = "Create Document";
+    Layout = "_LayoutPrivate";
+}
+
+<h2>➕ Create Document</h2>
+
+<form asp-action="Create" asp-controller="Document" enctype="multipart/form-data" method="post">
+    <div class="mb-3">
+        <label for="Title" class="form-label">Title</label>
+        <input asp-for="Title" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="Description" class="form-label">Description</label>
+        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+    </div>
+
+    <div class="mb-3">
+        <label for="FileUpload" class="form-label">Upload File (Word/Excel)</label>
+        <input type="file" name="FileUpload" class="form-control"
+               accept=".doc,.docx,.xls,.xlsx" required />
+    </div>
+
+    <div class="mb-3">
+        <label for="Status" class="form-label">Status</label>
+        <select asp-for="Status" class="form-select">
+            <option value="Draft">Draft</option>
+            <option value="Published">Published</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">💾 Save</button>
+    <a asp-action="Index" class="btn btn-secondary">🔙 Back</a>
+</form>

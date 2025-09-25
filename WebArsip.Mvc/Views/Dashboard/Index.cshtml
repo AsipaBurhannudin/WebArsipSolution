@@ -1,0 +1,91 @@
+﻿@using Newtonsoft.Json
+@model WebArsip.Mvc.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_LayoutPrivate";
+    var stats = ViewBag.AuditLogStats as List<WebArsip.Mvc.ViewModels.AuditLogStatsViewModel>;
+}
+
+<h2>Dashboard</h2>
+
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Documents</h5>
+                <p class="card-text display-6">@Model.DocumentCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Users</h5>
+                <p class="card-text display-6">@Model.UserCount</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-body">
+                <h5 class="card-title">Audit Logs</h5>
+                <p class="card-text display-6">@Model.AuditLogCount</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr />
+
+<h4>Aktivitas Audit Log 7 Hari Terakhir</h4>
+<canvas id="auditLogChart" height="100"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const stats = @Html.Raw(JsonConvert.SerializeObject(stats));
+
+        const grouped = stats.reduce((acc, item) => {
+            const date = new Date(item.date).toLocaleDateString('id-ID');
+            if (!acc[date]) acc[date] = 0;
+            acc[date] += item.count;
+            return acc;
+        }, {});
+
+        const labels = Object.keys(grouped);
+        const data = Object.values(grouped);
+
+        new Chart(document.getElementById('auditLogChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Jumlah Aktivitas',
+                    data: data,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    tension: 0.1
+                }]
+            }
+        });
+
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                        Toast.fire({
+                            icon: 'success',
+                            title: '@TempData["SuccessMessage"]'
+                        });
+            </text>
+        }
+
+    </script>
+}

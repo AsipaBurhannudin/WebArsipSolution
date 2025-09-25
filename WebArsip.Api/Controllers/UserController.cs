@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
 
@@ -21,10 +22,16 @@ namespace WebArsip.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserReadDto>>> GetUsers()
+        public async Task<ActionResult<PagedResult<UserReadDto>>> GetUsers([FromQuery] BaseQueryDto query)
         {
-            var users = _userManager.Users.ToList();
-            var roles = _roleManager.Roles.ToList();
+            var usersQuery = _userManager.Users;
+
+            var totalCount = await usersQuery.CountAsync();
+
+            var users = await usersQuery
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
 
             var userDtos = new List<UserReadDto>();
 
@@ -42,7 +49,15 @@ namespace WebArsip.Api.Controllers
                 });
             }
 
-            return Ok(userDtos);
+            var result = new PagedResult<UserReadDto>
+            {
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalCount = totalCount,
+                Items = userDtos
+            };
+
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
@@ -128,5 +143,13 @@ namespace WebArsip.Api.Controllers
 
             return NoContent();
         }
+
+        [HttpGet("count")]
+        public async Task<ActionResult<int>> GetUserCount()
+        {
+            var count = await _userManager.Users.CountAsync();
+            return Ok(count);
+        }
+
     }
 }

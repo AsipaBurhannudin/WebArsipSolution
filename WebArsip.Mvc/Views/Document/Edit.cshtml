@@ -1,0 +1,38 @@
+﻿@model WebArsip.Mvc.ViewModels.DocumentViewModel
+
+@{
+    ViewData["Title"] = "Edit Document";
+}
+
+<h2>✏ Edit Dokumen</h2>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    <input type="hidden" asp-for="DocId" />
+
+    <div class="form-group mb-3">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+    </div>
+
+    <div class="form-group mb-3">
+        <label>File Upload (Word/Excel)</label>
+        <input type="file" name="FileUpload" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.FilePath))
+        {
+            <p>File saat ini: <a href="@Model.FilePath" target="_blank">Lihat File</a></p>
+        }
+    </div>
+
+    <div class="form-group mb-3">
+        <label asp-for="Status"></label>
+        <input asp-for="Status" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">💾 Simpan</button>
+    <a asp-action="Index" class="btn btn-secondary">⬅ Kembali</a>
+</form>

@@ -1,0 +1,40 @@
+﻿@model WebArsip.Mvc.ViewModels.DocumentViewModel
+
+@{
+    ViewData["Title"] = "Detail Document";
+}
+
+<h2>👁 Detail Dokumen</h2>
+
+<div class="card">
+    <div class="card-body">
+        <h4>@Model.Title</h4>
+        <p><strong>Deskripsi:</strong> @Model.Description</p>
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Dibuat:</strong> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</p>
+        <p><strong>Update Terakhir:</strong> @Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+
+        <p>
+            <strong>File:</strong><br />
+            @if (!string.IsNullOrEmpty(Model.FilePath))
+            {
+                var ext = System.IO.Path.GetExtension(Model.FilePath).ToLower();
+                if (ext == ".doc" || ext == ".docx" || ext == ".xls" || ext == ".xlsx")
+                {
+                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=@Url.Content(Model.FilePath)"
+                            width="100%" height="600px" frameborder="0"></iframe>
+                }
+                else
+                {
+                    <a href="@Model.FilePath" target="_blank">📂 Unduh File</a>
+                }
+            }
+            else
+            {
+                <span class="text-muted">Tidak ada file</span>
+            }
+        </p>
+
+        <a asp-action="Index" class="btn btn-secondary">⬅ Kembali</a>
+    </div>
+</div>
