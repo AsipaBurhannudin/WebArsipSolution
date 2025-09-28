@@ -12,5 +12,6 @@
 
         public ICollection<Archive> Archives { get; set; } = new List<Archive>();
         public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+        public ICollection<UserPermission> UserPermissions { get; set; } = new List<UserPermission>();
     }
 }

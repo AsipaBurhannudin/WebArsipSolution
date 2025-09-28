@@ -26,4 +26,12 @@ namespace WebArsip.Core.Entities
         public Document Document { get; set; } = null!;
 
     }
+    public static class Features
+    {
+        public const string DocumentView = "Document.View";
+        public const string DocumentCreate = "Document.Create";
+        public const string DocumentEdit = "Document.Edit";
+        public const string DocumentDelete = "Document.Delete";
+        public const string DocumentDownload = "Document.Download";
+    }
 }

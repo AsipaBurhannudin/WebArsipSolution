@@ -23,14 +23,11 @@ namespace WebArsip.Api.Controllers
             _auditLogService = auditLogService;
         }
 
-        //cek apakah user punya role Admin
         private bool IsAdmin(IEnumerable<string> roles) =>
             roles.Contains("Admin");
 
-        //cek permission berdasarkan role
         private async Task<bool> HasPermission(IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
         {
-            // Akses Bypass untuk admin
             if (IsAdmin(roleNames)) return true;
 
             var roleIds = await _context.Roles
@@ -51,7 +48,6 @@ namespace WebArsip.Api.Controllers
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
 
-            // Admin → bypass, dapat semua dokumen
             IQueryable<Document> docsQuery = _context.Documents;
 
             if (!roles.Contains("Admin"))
@@ -66,10 +62,8 @@ namespace WebArsip.Api.Controllers
                     .Select(p => p.Document);
             }
 
-            // hitung total
             var totalCount = await docsQuery.CountAsync();
 
-            // ambil sesuai pagination
             var docs = await docsQuery
                 .OrderByDescending(d => d.CreatedDate)
                 .Skip((query.Page - 1) * query.PageSize)

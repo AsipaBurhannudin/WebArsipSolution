@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using WebArsip.Mvc.Models;
-using WebArsip.Mvc.ViewModels;
+using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {

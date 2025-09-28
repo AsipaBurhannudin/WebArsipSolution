@@ -1,0 +1,36 @@
+﻿@model IEnumerable<WebArsip.Core.Entities.UserPermission>
+@{
+    ViewData["Title"] = "User Document Permissions";
+    Layout = "_LayoutPrivate";
+}
+
+<h2>👤 User Document Permissions</h2>
+<a asp-action="Create" class="btn btn-primary mb-3">➕ Add Permission</a>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Document</th>
+            <th>View</th>
+            <th>Edit</th>
+            <th>Delete</th>
+            <th>Download</th>
+            <th>Upload</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td>@p.User.Email</td>
+                <td>@p.Document.Title</td>
+                <td>@p.CanView</td>
+                <td>@p.CanEdit</td>
+                <td>@p.CanDelete</td>
+                <td>@p.CanDownload</td>
+                <td>@p.CanUpload</td>
+            </tr>
+        }
+    </tbody>
+</table>

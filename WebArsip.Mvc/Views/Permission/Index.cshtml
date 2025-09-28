@@ -1,0 +1,93 @@
+﻿@using WebArsip.Mvc.Models.ViewModels
+@model IEnumerable<PermissionViewModel>
+@{
+    ViewData["Title"] = "Permission Management";
+    Layout = "_LayoutPrivate";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>⚙ Permission Management</h2>
+    <a asp-action="Create" class="btn btn-primary">➕ Add Permission</a>
+</div>
+
+<table id="permTable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Role</th>
+            <th>Document</th>
+            <th>View</th>
+            <th>Edit</th>
+            <th>Delete</th>
+            <th>Upload</th>
+            <th>Download</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr>
+                <td></td>
+                <td>@p.RoleName</td>
+                <td>@p.DocumentTitle</td>
+                <td>@(p.CanView ? "✅" : "❌")</td>
+                <td>@(p.CanEdit ? "✅" : "❌")</td>
+                <td>@(p.CanDelete ? "✅" : "❌")</td>
+                <td>@(p.CanUpload ? "✅" : "❌")</td>
+                <td>@(p.CanDownload ? "✅" : "❌")</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="@p.PermissionId" data-title="@p.RoleName">
+                        🗑 Delete
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // DataTables + numbering
+            $('#permTable').DataTable({
+                responsive: true,
+                pageLength: 10,
+                order: [[1, 'asc']],
+                columnDefs: [{ targets: 0, orderable: false, searchable: false }]
+            }).on('order.dt search.dt', function () {
+                let table = $('#permTable').DataTable();
+                table.column(0, { search: 'applied', order: 'applied' })
+                    .nodes()
+                    .each((cell, i) => cell.innerHTML = i + 1);
+            }).draw();
+
+            // SweetAlert2 Delete
+            $(".delete-btn").click(function () {
+                var id = $(this).data("id");
+                var title = $(this).data("title");
+
+                Swal.fire({
+                    title: "Yakin hapus?",
+                    text: "Permission untuk role " + title + " akan dihapus!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Ya, hapus!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('/Permission/Delete/' + id, function (res) {
+                            if (res.success) {
+                                Swal.fire("Berhasil!", res.message, "success");
+                                setTimeout(() => location.reload(), 1500);
+                            } else {
+                                Swal.fire("Error", res.message, "error");
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

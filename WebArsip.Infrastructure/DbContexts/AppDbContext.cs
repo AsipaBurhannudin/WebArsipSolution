@@ -12,6 +12,7 @@ namespace WebArsip.Infrastructure.DbContexts
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<Archive> Archives { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<UserPermission> UserPermissions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -32,6 +33,22 @@ namespace WebArsip.Infrastructure.DbContexts
             {
                 entity.HasKey(a => a.ArchiveId);
             });
+
+            modelBuilder.Entity<UserPermission>(entity =>
+            {
+                entity.HasKey(up => up.UserPermissionId);
+
+                entity.HasOne(up => up.User)
+                      .WithMany() // atau .WithMany(u => u.UserPermissions) kalau di User.cs ada ICollection<UserPermission>
+                      .HasForeignKey(up => up.UserId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(up => up.Document)
+                      .WithMany()
+                      .HasForeignKey(up => up.DocId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
 
             // Migrasi Seeding data ke DB
             modelBuilder.Entity<Permission>().HasData(

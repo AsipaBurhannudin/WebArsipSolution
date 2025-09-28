@@ -402,6 +402,49 @@ namespace WebArsip.Infrastructure.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("WebArsip.Core.Entities.UserPermission", b =>
+                {
+                    b.Property<int>("UserPermissionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserPermissionId"));
+
+                    b.Property<bool>("CanDelete")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanDownload")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanEdit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanUpload")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CanView")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("DocId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DocumentDocId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserPermissionId");
+
+                    b.HasIndex("DocId");
+
+                    b.HasIndex("DocumentDocId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserPermissions");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("WebArsip.Core.Entities.Role", null)
@@ -483,11 +526,36 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("WebArsip.Core.Entities.UserPermission", b =>
+                {
+                    b.HasOne("WebArsip.Core.Entities.Document", "Document")
+                        .WithMany()
+                        .HasForeignKey("DocId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebArsip.Core.Entities.Document", null)
+                        .WithMany("UserPermissions")
+                        .HasForeignKey("DocumentDocId");
+
+                    b.HasOne("WebArsip.Core.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("WebArsip.Core.Entities.Document", b =>
                 {
                     b.Navigation("Archives");
 
                     b.Navigation("Permissions");
+
+                    b.Navigation("UserPermissions");
                 });
 #pragma warning restore 612, 618
         }

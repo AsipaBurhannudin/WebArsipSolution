@@ -1,9 +1,10 @@
 ﻿@using Newtonsoft.Json
-@model WebArsip.Mvc.ViewModels.DashboardViewModel
+@using WebArsip.Mvc.Models.ViewModels
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "_LayoutPrivate";
-    var stats = ViewBag.AuditLogStats as List<WebArsip.Mvc.ViewModels.AuditLogStatsViewModel>;
+    var stats = ViewBag.AuditLogStats as List<AuditLogStatsViewModel>;
 }
 
 <h2>Dashboard</h2>

@@ -1,0 +1,34 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.UserEditViewModel
+
+@{
+    ViewData["Title"] = "Edit User";
+    Layout = "_LayoutPrivate";
+}
+
+<div class="container mt-4">
+    <h2>✏ Edit User</h2>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="UserId" />
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="RoleId" class="form-label"></label>
+            <select asp-for="RoleId" asp-items="Model.Roles" class="form-select"></select>
+            <span asp-validation-for="RoleId" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">💾 Save Changes</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

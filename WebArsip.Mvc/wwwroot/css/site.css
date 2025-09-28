@@ -89,6 +89,15 @@ body {
     height: 56px;
 }
 
+    .navbar .navbar-text {
+        white-space: nowrap; /* biar ga pecah ke bawah */
+        padding-right: 15px;
+    }
+
+.dataTables_length {
+    margin-right: auto; /* biar geser ke kiri */
+}
+
 /* Konten */
 .container-fluid {
     flex: 1;

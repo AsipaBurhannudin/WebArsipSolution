@@ -1,0 +1,51 @@
+﻿@using WebArsip.Mvc.Models.ViewModels
+@model PermissionViewModel
+@{
+    ViewData["Title"] = "Edit Permission";
+    Layout = "_LayoutPrivate";
+}
+
+<h2>✏ Edit Permission</h2>
+<hr />
+
+<form asp-action="Edit" method="post">
+    <input type="hidden" asp-for="PermissionId" />
+
+    <div class="mb-3">
+        <label for="RoleId" class="form-label">Role</label>
+        <select asp-for="RoleId" class="form-control" asp-items="ViewBag.Roles">
+            <option value="">-- Pilih Role --</option>
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="DocId" class="form-label">Document</label>
+        <select asp-for="DocId" class="form-control" asp-items="ViewBag.Documents">
+            <option value="">-- Pilih Document --</option>
+        </select>
+    </div>
+
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="CanView" class="form-check-input" />
+        <label asp-for="CanView" class="form-check-label">Can View</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="CanEdit" class="form-check-input" />
+        <label asp-for="CanEdit" class="form-check-label">Can Edit</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="CanDelete" class="form-check-input" />
+        <label asp-for="CanDelete" class="form-check-label">Can Delete</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="CanUpload" class="form-check-input" />
+        <label asp-for="CanUpload" class="form-check-label">Can Upload</label>
+    </div>
+    <div class="mb-3 form-check">
+        <input type="checkbox" asp-for="CanDownload" class="form-check-input" />
+        <label asp-for="CanDownload" class="form-check-label">Can Download</label>
+    </div>
+
+    <button type="submit" class="btn btn-warning">💾 Update</button>
+    <a asp-action="Index" class="btn btn-secondary">↩ Back</a>
+</form>

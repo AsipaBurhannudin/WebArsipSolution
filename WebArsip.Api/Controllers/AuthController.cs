@@ -6,6 +6,8 @@ using System.Security.Claims;
 using System.Text;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
+using WebArsip.Mvc.Models.ViewModels;
+using LoginResponse = WebArsip.Core.DTOs.LoginResponse;
 
 namespace WebArsip.Api.Controllers
 {
@@ -34,6 +36,10 @@ namespace WebArsip.Api.Controllers
             if (!check) return Unauthorized("Password Anda Salah!");
 
             var roles = await _userManager.GetRolesAsync(user);
+            var roleName = roles.FirstOrDefault() ?? "User";
+            var role = await _roleManager.FindByNameAsync(roleName);
+
+            int roleId = role?.Id ?? 0;
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]);
@@ -41,13 +47,9 @@ namespace WebArsip.Api.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.UserName ?? "")
+                new Claim(ClaimTypes.Name, user.UserName ?? ""),
+                new Claim(ClaimTypes.Role, roleName)
             };
-
-            foreach (var role in roles)
-            {
-                claims.Add(new Claim(ClaimTypes.Role, role));
-            }
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -63,8 +65,15 @@ namespace WebArsip.Api.Controllers
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var jwt = tokenHandler.WriteToken(token);
 
-            return Ok(new { Token = jwt });
+            return Ok(new LoginResponse
+            {
+                Token = jwt,
+                RoleId = roleId,
+                RoleName = roleName,
+                Email = user.Email
+            });
         }
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)

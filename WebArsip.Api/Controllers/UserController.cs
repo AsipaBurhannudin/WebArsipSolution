@@ -92,7 +92,6 @@ namespace WebArsip.Api.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            // Tambah role
             var role = await _roleManager.FindByIdAsync(dto.RoleId.ToString());
             if (role != null)
                 await _userManager.AddToRoleAsync(user, role.Name);
@@ -120,7 +119,6 @@ namespace WebArsip.Api.Controllers
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
-            // Update role
             var currentRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentRoles);
 

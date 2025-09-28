@@ -8,15 +8,12 @@
 <head>
     <title>@ViewData["Title"] - WebArsip</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <!-- Bootstrap -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
-
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
@@ -46,6 +43,10 @@
                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")">
                     ⚙ <span>Permissions</span>
                 </a>
+                <a asp-controller="UserPermission" asp-action="Index"
+                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserPermission" ? "active" : "")">
+                    👤⚙ <span>User Permissions</span>
+                </a>
                 <a asp-controller="AuditLog" asp-action="Index"
                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLog" ? "active" : "")">
                     📜 <span>Audit Logs</span>
@@ -59,30 +60,31 @@
         <!-- 🔹 Content -->
         <div id="page-content-wrapper">
             <!-- Navbar Fixed -->
-            <nav class="navbar navbar-light bg-light border-bottom">
-                <div class="container-fluid">
+            <nav class="navbar navbar-light bg-light border-bottom d-flex justify-content-between">
+                <!-- Kiri: tombol expand -->
+                <div>
                     <button class="btn btn-outline-secondary" id="menu-toggle">☰</button>
-                    <span class="navbar-text ms-auto">
+                </div>
+
+                <!-- Kanan: email user -->
+                <div>
+                    <span class="navbar-text">
                         <strong>@email</strong>
                     </span>
                 </div>
             </nav>
 
-            <!-- Content Body -->
-            <div class="container-fluid">
+            <div class="container-fluid mt-5">
                 @RenderBody()
             </div>
         </div>
     </div>
-
     <!-- jQuery & Bootstrap -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
     <!-- Toggle Sidebar -->
     <script>
         $("#menu-toggle").click(function (e) {

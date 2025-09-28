@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WebArsip.Core\WebArsip.Core.csproj" />
+    <ProjectReference Include="..\WebArsip.Infrastructure\WebArsip.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

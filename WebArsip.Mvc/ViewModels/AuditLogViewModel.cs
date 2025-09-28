@@ -1,4 +1,4 @@
-﻿namespace WebArsip.Mvc.ViewModels
+﻿namespace WebArsip.Mvc.Models.ViewModels
 {
     public class AuditLogViewModel
     {

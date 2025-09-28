@@ -19,6 +19,7 @@
   <ItemGroup>
     <ProjectReference Include="..\WebArsip.Core\WebArsip.Core.csproj" />
     <ProjectReference Include="..\WebArsip.Infrastructure\WebArsip.Infrastructure.csproj" />
+    <ProjectReference Include="..\WebArsip.Mvc\WebArsip.Mvc.csproj" />
   </ItemGroup>
 
   <ItemGroup>

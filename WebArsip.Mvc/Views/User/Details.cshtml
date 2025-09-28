@@ -1,0 +1,40 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.UserViewModel
+
+@{
+    ViewData["Title"] = "User Details";
+    Layout = "_LayoutPrivate";
+}
+
+<div class="container mt-4">
+    <h2>🔍 User Details</h2>
+
+    <div class="card shadow-sm p-4">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.UserId</dd>
+
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">@Model.Name</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Role</dt>
+            <dd class="col-sm-9">@Model.RoleName</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">@(Model.IsActive ? "Active ✅" : "Inactive ❌")</dd>
+        </dl>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-secondary">⬅ Back to List</a>
+        <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-warning">✏ Edit</a>
+        <form asp-action="Delete" asp-route-id="@Model.UserId" method="post" style="display:inline;">
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Are you sure to delete this user?')">
+                🗑 Delete
+            </button>
+        </form>
+    </div>
+</div>

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using WebArsip.Mvc.ViewModels;
+using WebArsip.Mvc.Helpers;
+using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {
@@ -15,18 +16,15 @@ namespace WebArsip.Mvc.Controllers
 
         public async Task<IActionResult> Index()
         {
+            if (!UserRoleHelper.IsLoggedIn(HttpContext))
+                return RedirectToAction("UnauthorizedPage", "Error");
+
             var client = _clientFactory.CreateClient("WebArsipApi");
 
-            // --- Ambil Document Count ---
             var docCount = await GetCountAsync(client, "document/count");
-
-            // --- Ambil User Count ---
             var userCount = await GetCountAsync(client, "user/count");
-
-            // --- Ambil AuditLog Count ---
             var logCount = await GetCountAsync(client, "auditlog/count");
 
-            // --- Ambil daily stats untuk chart ---
             var stats = new List<AuditLogStatsViewModel>();
             var statsResponse = await client.GetAsync("auditlog/daily-stats?days=7");
             if (statsResponse.IsSuccessStatusCode)

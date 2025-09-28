@@ -128,12 +128,10 @@ using (var scope = app.Services.CreateScope())
 
         if (adminRole != null)
         {
-            // cek admin sudah punya permission atau belum
             bool hasPermission = await context.Permissions.AnyAsync(p => p.RoleId == adminRole.Id);
 
             if (!hasPermission)
             {
-                // full akses untuk semua dokumen yang ada
                 var documents = await context.Documents.ToListAsync();
                 foreach (var doc in documents)
                 {
@@ -175,7 +173,7 @@ app.Use(async (context, next) =>
         context.Response.Headers.ContainsKey("Location") &&
         context.Response.Headers["Location"].ToString().Contains("/Account/Login"))
     {
-        context.Response.StatusCode = 401; // Unauthorized, nanti ganti jadi redirect
+        context.Response.StatusCode = 401;
         return;
     }
     await next();

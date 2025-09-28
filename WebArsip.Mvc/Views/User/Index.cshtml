@@ -1,0 +1,99 @@
+﻿@model IEnumerable<WebArsip.Mvc.Models.ViewModels.UserViewModel>
+@{
+    ViewData["Title"] = "Users";
+    Layout = "_LayoutPrivate";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>👥 Users</h2>
+    <a asp-controller="User" asp-action="Create" class="btn btn-primary">➕ Add User</a>
+</div>
+
+<table id="userTable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td></td>
+                <td>@user.UserId</td>
+                <td>@user.Name</td>
+                <td>@user.Email</td>
+                <td>@user.RoleName</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@user.UserId" class="btn btn-sm btn-outline-success">✏ Details</a>
+                    <a asp-action="Edit" asp-route-id="@user.UserId" class="btn btn-sm btn-warning">✏ Edit</a>
+                    <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="@user.UserId" data-name="@user.Name">
+                        🗑 Delete
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#userTable').DataTable({
+                responsive: true,
+                pageLength: 10,
+                order: [[1, 'asc']],
+                columnDefs: [{ targets: 0, orderable: false, searchable: false }]
+            }).on('order.dt search.dt', function () {
+                let table = $('#userTable').DataTable();
+                table.column(0, { search: 'applied', order: 'applied' })
+                     .nodes()
+                     .each((cell, i) => cell.innerHTML = i + 1);
+            }).draw();
+
+            $(".delete-btn").click(function () {
+                var id = $(this).data("id");
+                var name = $(this).data("name");
+
+                Swal.fire({
+                    title: "Yakin hapus?",
+                    text: "User \"" + name + "\" akan dihapus permanen!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#d33",
+                    cancelButtonColor: "#3085d6",
+                    confirmButtonText: "Ya, hapus!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/User/Delete/' + id,
+                            type: 'POST',
+                            success: function (res) {
+                                if (res.success) {
+                                    Swal.fire({
+                                        icon: "success",
+                                        title: "Berhasil!",
+                                        text: res.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                    setTimeout(() => location.reload(), 1600);
+                                } else {
+                                    Swal.fire("Error", res.message, "error");
+                                }
+                            },
+                            error: function () {
+                                Swal.fire("Error", "Gagal menghapus user.", "error");
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

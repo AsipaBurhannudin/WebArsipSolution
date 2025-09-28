@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebArsip.Mvc.ViewModels;
+using WebArsip.Core.Entities;
+using WebArsip.Mvc.Models;
+using WebArsip.Mvc.Helpers;
+using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {
-    [Route("auth")]
     public class AuthController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -11,6 +13,12 @@ namespace WebArsip.Mvc.Controllers
         public AuthController(IHttpClientFactory clientFactory)
         {
             _clientFactory = clientFactory;
+        }
+
+        [HttpGet]
+        public IActionResult Login()
+        {
+            return View();
         }
 
         [HttpGet("login")]
@@ -41,6 +49,8 @@ namespace WebArsip.Mvc.Controllers
                 return View(model);
             }
 
+            HttpContext.Session.SetString("RoleId", result.RoleId.ToString());
+            HttpContext.Session.SetString("UserRole", result.RoleName);
             HttpContext.Session.SetString("JWToken", result.Token);
             HttpContext.Session.SetString("UserEmail", model.Email);
 
@@ -54,10 +64,10 @@ namespace WebArsip.Mvc.Controllers
         [HttpPost("logout")]
         [ValidateAntiForgeryToken]
         public IActionResult Logout()
-        {
+           {
             HttpContext.Session.Clear();
             TempData["SuccessMessage"] = "Anda berhasil logout.";
-            return RedirectToAction("Login", "Auth");
+             return RedirectToAction("Login", "Auth");
+           }
         }
     }
-}
