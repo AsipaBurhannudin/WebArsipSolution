@@ -9,6 +9,7 @@
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string Status { get; set; } = "Active";
+        public string? OriginalFileName { get; set; }
 
         public ICollection<Archive> Archives { get; set; } = new List<Archive>();
         public ICollection<Permission> Permissions { get; set; } = new List<Permission>();

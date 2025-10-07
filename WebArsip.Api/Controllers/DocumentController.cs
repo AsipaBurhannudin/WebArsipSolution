@@ -23,8 +23,7 @@ namespace WebArsip.Api.Controllers
             _auditLogService = auditLogService;
         }
 
-        private bool IsAdmin(IEnumerable<string> roles) =>
-            roles.Contains("Admin");
+        private bool IsAdmin(IEnumerable<string> roles) => roles.Contains("Admin");
 
         private async Task<bool> HasPermission(IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
         {
@@ -43,6 +42,14 @@ namespace WebArsip.Api.Controllers
             return permission != null && predicate(permission);
         }
 
+        private string GetStorageFilePath(string relativeFilePath)
+        {
+            var root = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage");
+            var relative = relativeFilePath.TrimStart('/', '\\');
+            return Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        }
+
+        // 📘 GET: /api/document
         [HttpGet]
         public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
@@ -81,6 +88,7 @@ namespace WebArsip.Api.Controllers
                     Title = d.Title,
                     Description = d.Description,
                     FilePath = d.FilePath,
+                    OriginalFileName = d.OriginalFileName,
                     CreatedDate = d.CreatedDate,
                     UpdatedAt = d.UpdatedAt,
                     Status = d.Status
@@ -90,6 +98,7 @@ namespace WebArsip.Api.Controllers
             return Ok(result);
         }
 
+        // 📘 GET: /api/document/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
@@ -102,136 +111,139 @@ namespace WebArsip.Api.Controllers
                 Title = doc.Title,
                 Description = doc.Description,
                 FilePath = doc.FilePath,
+                OriginalFileName = doc.OriginalFileName,
                 CreatedDate = doc.CreatedDate,
                 UpdatedAt = doc.UpdatedAt,
                 Status = doc.Status
             };
         }
 
-
+        // 📘 POST: /api/document
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+            if (!await HasPermission(roles, 1, p => p.CanUpload)) return Forbid();
 
-            var canUpload = await HasPermission(roles, 1, p => p.CanUpload); // Admin auto true
-            if (!canUpload) return Forbid();
-
-            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
-            );
-
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
             var doc = new Document
             {
                 Title = dto.Title,
                 Description = dto.Description,
                 FilePath = dto.FilePath,
+                OriginalFileName = dto.OriginalFileName,
                 CreatedDate = wibNow,
-                Status = dto.Status
+                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Draft" : dto.Status
             };
 
             _context.Documents.Add(doc);
             await _context.SaveChangesAsync();
+            await _auditLogService.LogAsync(User, "CREATE", "Document", doc.DocId.ToString(), $"Dokumen baru dibuat: {doc.Title}");
 
-            await _auditLogService.LogAsync(User, "CREATE", "Document", doc.DocId.ToString(),
-            $"Dokumen baru dibuat: {doc.Title}");
-
-            return new DocumentReadDto
+            return CreatedAtAction(nameof(GetDocument), new { id = doc.DocId }, new DocumentReadDto
             {
                 DocId = doc.DocId,
                 Title = doc.Title,
                 Description = doc.Description,
                 FilePath = doc.FilePath,
+                OriginalFileName = doc.OriginalFileName,
                 CreatedDate = doc.CreatedDate,
                 Status = doc.Status
-            };
+            });
         }
 
-        
+        // 📘 PUT: /api/document/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-
-            var canEdit = await HasPermission(roles, id, p => p.CanEdit);
-            if (!canEdit) return Forbid();
+            if (!await HasPermission(roles, id, p => p.CanEdit)) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
-            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
-            );
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
 
             doc.Title = dto.Title;
             doc.Description = dto.Description;
             doc.FilePath = dto.FilePath;
+            doc.OriginalFileName = dto.OriginalFileName;
             doc.UpdatedAt = wibNow;
-            doc.Status = dto.Status;
+
+            if (doc.Status == "Published")
+                doc.Status = "Updated";
+            else if (!string.IsNullOrEmpty(dto.Status))
+                doc.Status = dto.Status;
 
             await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(),
-            $"Dokumen diperbarui: {doc.Title}");
+            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui: {doc.Title}");
             return NoContent();
         }
 
-        
+        // 📘 DELETE: /api/document/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-
-            var canDelete = await HasPermission(roles, id, p => p.CanDelete);
-            if (!canDelete) return Forbid();
+            if (!await HasPermission(roles, id, p => p.CanDelete)) return Forbid();
 
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
             _context.Documents.Remove(doc);
             await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(),
-            $"Dokumen dihapus: {doc.Title}");
+            await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(), $"Dokumen dihapus: {doc.Title}");
             return NoContent();
         }
 
-        
-        [HttpPost("{id}/archive")]
-        public async Task<IActionResult> ArchiveDocument(int id)
+        // 📥 DOWNLOAD
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> DownloadDocument(int id)
         {
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-
-            var canArchive = await HasPermission(roles, id, p => p.CanDelete);
-            if (!canArchive) return Forbid();
-
             var doc = await _context.Documents.FindAsync(id);
-            if (doc == null) return NotFound();
+            if (doc == null) return NotFound("Dokumen tidak ditemukan.");
 
-            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
-            DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("SEA Time")
-            );
+            var fullPath = GetStorageFilePath(doc.FilePath);
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound("File tidak ditemukan di server.");
 
-            var archive = new Archive
+            var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+            var contentType = "application/octet-stream";
+            var fileName = doc.OriginalFileName ?? Path.GetFileName(fullPath);
+            return File(stream, contentType, fileName);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("previewfile/{id}")]
+        public async Task<IActionResult> PreviewFile(int id)
+        {
+            var doc = await _context.Documents.FindAsync(id);
+            if (doc == null || string.IsNullOrEmpty(doc.FilePath))
+                return NotFound();
+
+            var storagePath = Path.Combine(
+                Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
+                "WebArsipStorage", "uploads");
+
+            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath));
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var ext = Path.GetExtension(filePath).ToLowerInvariant();
+            var mimeType = ext switch
             {
-                DocId = doc.DocId,
-                ArchivedAt = wibNow
+                ".pdf" => "application/pdf",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                _ => "application/octet-stream"
             };
 
-            _context.Archives.Add(archive);
-            await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "ARCHIVE", "Document", id.ToString(),
-            $"Dokumen diarsipkan: {doc.Title}");
-
-            return Ok(new { message = $"Document {doc.Title} archived successfully" });
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            return File(stream, mimeType, enableRangeProcessing: true);
         }
 
-        [HttpGet("count")]
-        public async Task<ActionResult<int>> GetDocumentCount()
-        {
-            var count = await _context.Documents.CountAsync();
-            return Ok(count);
-        }
+
     }
 }

@@ -1,41 +1,72 @@
-﻿@using WebArsip.Mvc.Models.ViewModels
-@model DocumentViewModel
-
+﻿@model WebArsip.Mvc.Models.ViewModels.DocumentViewModel
 @{
-    ViewData["Title"] = "Detail Document";
+    ViewData["Title"] = "Document Details";
+    Layout = "_LayoutPrivate";
 }
 
-<h2>👁 Detail Dokumen</h2>
+<h2>📄 @Model.Title</h2>
 
-<div class="card">
-    <div class="card-body">
-        <h4>@Model.Title</h4>
-        <p><strong>Deskripsi:</strong> @Model.Description</p>
-        <p><strong>Status:</strong> @Model.Status</p>
-        <p><strong>Dibuat:</strong> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</p>
-        <p><strong>Update Terakhir:</strong> @Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</p>
+<div class="card p-4 shadow-sm">
+    <h5 class="mb-3">📝 Description</h5>
+    <p>@Model.Description</p>
 
-        <p>
-            <strong>File:</strong><br />
-            @if (!string.IsNullOrEmpty(Model.FilePath))
-            {
-                var ext = System.IO.Path.GetExtension(Model.FilePath).ToLower();
-                if (ext == ".doc" || ext == ".docx" || ext == ".xls" || ext == ".xlsx")
-                {
-                    <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=@Url.Content(Model.FilePath)"
-                            width="100%" height="600px" frameborder="0"></iframe>
-                }
-                else
-                {
-                    <a href="@Model.FilePath" target="_blank">📂 Unduh File</a>
-                }
-            }
-            else
-            {
-                <span class="text-muted">Tidak ada file</span>
-            }
-        </p>
+    <h6>Status: <span class="badge bg-info">@Model.Status</span></h6>
+    <h6>Dibuat: @Model.CreatedDate.ToString("dd MMM yyyy HH:mm")</h6>
+    @if (Model.UpdatedAt.HasValue)
+    {
+        <h6>Diperbarui: @Model.UpdatedAt.Value.ToString("dd MMM yyyy HH:mm")</h6>
+    }
 
-        <a asp-action="Index" class="btn btn-secondary">⬅ Kembali</a>
+    <hr />
+
+    <h5>📂 File Preview</h5>
+
+    @{
+        var apiBase = "http://localhost:5287";
+        var fileUrl = $"{apiBase}/api/document/previewfile/{Model.DocId}";
+        var ext = System.IO.Path.GetExtension(Model.FilePath)?.ToLowerInvariant() ?? "";
+    }
+
+    @if (ext == ".pdf")
+    {
+        <iframe src="@fileUrl" width="100%" height="700px" frameborder="0"></iframe>
+    }
+    else if (ext == ".doc" || ext == ".docx" || ext == ".xls" || ext == ".xlsx")
+    {
+        var encodedUrl = System.Net.WebUtility.UrlEncode(fileUrl);
+        <iframe src="https://view.officeapps.live.com/op/embed.aspx?src=@encodedUrl"
+                width="100%" height="700px" style="border:none;"></iframe>
+    }
+    else
+    {
+        <div class="alert alert-warning mt-3">
+            Format file <b>@ext</b> tidak mendukung preview.
+        </div>
+    }
+
+    <div class="mt-4">
+        <a asp-action="Download" asp-route-id="@Model.DocId" class="btn btn-primary">
+            ⬇️ Download File
+        </a>
+        <a asp-action="Index" class="btn btn-secondary ms-2">🔙 Back</a>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const iframe = document.querySelector("iframe");
+            if (iframe) {
+                iframe.addEventListener("error", function () {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Gagal memuat file",
+                        text: "File tidak dapat ditampilkan. Pastikan file tersedia di server.",
+                        confirmButtonColor: "#d33"
+                    });
+                });
+            }
+        });
+    </script>
+}

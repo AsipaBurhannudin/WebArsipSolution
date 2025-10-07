@@ -1,36 +1,76 @@
-﻿@model IEnumerable<WebArsip.Core.Entities.UserPermission>
+﻿@model IEnumerable<WebArsip.Mvc.Models.ViewModels.UserPermissionViewModel>
 @{
-    ViewData["Title"] = "User Document Permissions";
+    ViewData["Title"] = "User Permissions";
     Layout = "_LayoutPrivate";
 }
 
-<h2>👤 User Document Permissions</h2>
-<a asp-action="Create" class="btn btn-primary mb-3">➕ Add Permission</a>
+<div class="container mt-4">
+    <h2>🔑 User Permissions</h2>
+    <a asp-action="Create" class="btn btn-primary mb-3">➕ Add Permission</a>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>User</th>
-            <th>Document</th>
-            <th>View</th>
-            <th>Edit</th>
-            <th>Delete</th>
-            <th>Download</th>
-            <th>Upload</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var p in Model)
-        {
+    <table id="tblUserPermissions" class="table table-bordered table-striped">
+        <thead>
             <tr>
-                <td>@p.User.Email</td>
-                <td>@p.Document.Title</td>
-                <td>@p.CanView</td>
-                <td>@p.CanEdit</td>
-                <td>@p.CanDelete</td>
-                <td>@p.CanDownload</td>
-                <td>@p.CanUpload</td>
+                <th>User</th>
+                <th>Email</th>
+                <th>Document</th>
+                <th>View</th>
+                <th>Upload</th>
+                <th>Edit</th>
+                <th>Delete</th>
+                <th>⚙️ Actions</th>
             </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.UserName</td>
+                    <td>@item.UserEmail</td>
+                    <td>@item.DocumentTitle</td>
+                    <td>@(item.CanView ? "✅" : "❌")</td>
+                    <td>@(item.CanUpload ? "✅" : "❌")</td>
+                    <td>@(item.CanEdit ? "✅" : "❌")</td>
+                    <td>@(item.CanDelete ? "✅" : "❌")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@item.UserPermissionId" class="btn btn-sm btn-warning">✏️ Edit</a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteUserPermission(@item.UserPermissionId)">🗑️ Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function () {
+            $('#tblUserPermissions').DataTable();
+        });
+
+        function deleteUserPermission(id) {
+            Swal.fire({
+                title: 'Yakin?',
+                text: "Data UserPermission ini akan dihapus!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, hapus!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('/UserPermission/Delete/' + id, function (res) {
+                        if (res.success) {
+                            Swal.fire('Terhapus!', res.message, 'success')
+                                .then(() => location.reload());
+                        } else {
+                            Swal.fire('Gagal!', res.message, 'error');
+                        }
+                    });
+                }
+            });
         }
-    </tbody>
-</table>
+    </script>
+}

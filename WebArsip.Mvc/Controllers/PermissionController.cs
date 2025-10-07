@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using WebArsip.Mvc.Models.ViewModels;
+using static WebArsip.Mvc.Controllers.DocumentController;
 
 namespace WebArsip.Mvc.Controllers
 {

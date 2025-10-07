@@ -7,7 +7,7 @@
 
 <h2>➕ Create Document</h2>
 
-<form asp-action="Create" asp-controller="Document" enctype="multipart/form-data" method="post">
+<form id="createDocForm" enctype="multipart/form-data">
     <div class="mb-3">
         <label for="Title" class="form-label">Title</label>
         <input asp-for="Title" class="form-control" required />
@@ -19,9 +19,17 @@
     </div>
 
     <div class="mb-3">
-        <label for="FileUpload" class="form-label">Upload File (Word/Excel)</label>
+        <label for="FileUpload" class="form-label">Upload File (Word/Excel/PDF)</label>
         <input type="file" name="FileUpload" class="form-control"
-               accept=".doc,.docx,.xls,.xlsx" required />
+               accept=".doc,.docx,.xls,.xlsx,.pdf" required />
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress mb-3" style="height: 25px; display: none;">
+        <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated"
+             role="progressbar" style="width: 0%">
+            0%
+        </div>
     </div>
 
     <div class="mb-3">
@@ -35,3 +43,85 @@
     <button type="submit" class="btn btn-success">💾 Save</button>
     <a asp-action="Index" class="btn btn-secondary">🔙 Back</a>
 </form>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("createDocForm");
+            const fileInput = form.querySelector("input[name='FileUpload']");
+            const progressBarContainer = document.querySelector(".progress");
+            const progressBar = document.getElementById("uploadProgress");
+            const allowedExts = [".doc", ".docx", ".xls", ".xlsx", ".pdf"];
+
+            fileInput.addEventListener("change", function () {
+                const fileName = this.files[0]?.name || "";
+                const ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+
+                if (!allowedExts.includes(ext)) {
+                    Swal.fire({
+                        icon: "error",
+                        title: "File tidak valid!",
+                        text: "Hanya file Word, Excel, atau PDF yang diperbolehkan.",
+                        confirmButtonColor: "#d33"
+                    });
+                    this.value = "";
+                    return;
+                }
+            });
+
+            form.addEventListener("submit", async function (e) {
+                e.preventDefault();
+
+                const formData = new FormData(form);
+                const file = fileInput.files[0];
+                if (!file) {
+                    Swal.fire({ icon: "error", title: "Gagal", text: "Silakan pilih file terlebih dahulu." });
+                    return;
+                }
+
+                progressBarContainer.style.display = "block";
+                progressBar.style.width = "0%";
+                progressBar.textContent = "0%";
+
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("POST", "/Document/Create", true);
+
+                    xhr.upload.addEventListener("progress", function (e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            progressBar.style.width = percent + "%";
+                            progressBar.textContent = percent + "%";
+                        }
+                    });
+
+                    xhr.onload = function () {
+                        if (xhr.status === 200 || xhr.status === 302) {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Berhasil!",
+                                text: "Dokumen berhasil diupload!",
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.href = "/Document/Index";
+                            });
+                        } else {
+                            Swal.fire({ icon: "error", title: "Gagal", text: "Upload dokumen gagal." });
+                            progressBarContainer.style.display = "none";
+                        }
+                    };
+
+                    xhr.onerror = function () {
+                        Swal.fire({ icon: "error", title: "Gagal", text: "Terjadi kesalahan jaringan." });
+                        progressBarContainer.style.display = "none";
+                    };
+
+                    xhr.send(formData);
+                } catch (error) {
+                    Swal.fire({ icon: "error", title: "Error", text: "Terjadi error tidak diketahui." });
+                }
+            });
+        });
+    </script>
+}
