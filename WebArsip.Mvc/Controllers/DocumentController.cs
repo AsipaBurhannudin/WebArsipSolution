@@ -23,7 +23,6 @@ namespace WebArsip.Mvc.Controllers
             return client;
         }
 
-        // 🔹 Index
         public async Task<IActionResult> Index()
         {
             var client = CreateClient();
@@ -41,11 +40,9 @@ namespace WebArsip.Mvc.Controllers
             return View(paged?.Items ?? new List<DocumentViewModel>());
         }
 
-        // 🔹 Create (GET)
         [HttpGet]
         public IActionResult Create() => View();
 
-        // 📘 CREATE POST
         [HttpPost]
         public async Task<IActionResult> Create(DocumentViewModel model, IFormFile FileUpload)
         {
@@ -71,7 +68,7 @@ namespace WebArsip.Mvc.Controllers
                 using (var stream = new FileStream(fullPath, FileMode.Create))
                     await FileUpload.CopyToAsync(stream);
 
-                model.FilePath = fileName; // ✅ hanya nama file
+                model.FilePath = fileName; 
                 model.OriginalFileName = FileUpload.FileName;
             }
 
@@ -88,7 +85,6 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🔹 Details (Preview)
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -102,7 +98,6 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
-        // 📘 EDIT GET
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -115,7 +110,6 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
-        // 📘 EDIT POST
         [HttpPost]
         public async Task<IActionResult> Edit(DocumentViewModel model, IFormFile? FileUpload)
         {
@@ -123,7 +117,6 @@ namespace WebArsip.Mvc.Controllers
 
             var client = CreateClient();
 
-            // Ambil data lama biar FilePath gak kehapus
             var existingResponse = await client.GetAsync($"document/{model.DocId}");
             if (existingResponse.IsSuccessStatusCode)
             {
@@ -172,7 +165,6 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🔹 Delete
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -185,17 +177,23 @@ namespace WebArsip.Mvc.Controllers
             return Json(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
-        // 🔹 Download (gunakan endpoint API baru)
         [HttpGet]
         public async Task<IActionResult> Download(int id)
         {
             var client = CreateClient();
             var response = await client.GetAsync($"document/stream/{id}");
-            if (!response.IsSuccessStatusCode) return NotFound();
 
-            var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "File tidak ditemukan di server.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
+                ?? "file";
             var stream = await response.Content.ReadAsStreamAsync();
-            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            var contentType = response.Content.Headers.ContentType?.ToString()
+                ?? "application/octet-stream";
 
             return File(stream, contentType, fileName);
         }
@@ -211,12 +209,9 @@ namespace WebArsip.Mvc.Controllers
             var stream = await response.Content.ReadAsStreamAsync();
             var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
 
-            // 🟢 Return stream langsung (port 5077)
             return File(stream, contentType);
         }
 
-
-        // 🔹 Paged Result
         public class PagedResult<T>
         {
             public int Page { get; set; }

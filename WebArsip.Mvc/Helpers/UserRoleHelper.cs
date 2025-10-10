@@ -6,6 +6,15 @@ namespace WebArsip.Mvc.Helpers
 {
     public static class UserRoleHelper
     {
+       /* public static bool HasAccess(HttpContext context, string permissionKey)
+        {
+            var claims = context.User.Claims
+                .Where(c => c.Type == "Permission")
+                .Select(c => c.Value)
+                .ToList();
+
+            return claims.Contains(permissionKey);
+        }*/
         public static bool IsLoggedIn(HttpContext httpContext) =>
             !string.IsNullOrEmpty(httpContext.Session.GetString("UserEmail"));
 

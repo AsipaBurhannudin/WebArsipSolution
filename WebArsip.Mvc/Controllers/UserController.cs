@@ -4,9 +4,11 @@ using System.Net.Http.Headers;
 using WebArsip.Mvc.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using WebArsip.Core.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebArsip.Mvc.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class UserController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;

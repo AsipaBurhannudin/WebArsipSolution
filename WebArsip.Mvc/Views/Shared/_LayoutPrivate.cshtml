@@ -1,6 +1,14 @@
-﻿@using WebArsip.Mvc.Helpers
+﻿@using System.Security.Claims
+@using WebArsip.Mvc.Helpers
 @{
     var email = UserRoleHelper.GetUserEmail(Context);
+
+    @*var roles = Context.User.Claims
+        .Where(c => c.Type == ClaimTypes.Role)
+        .Select(c => c.Value)
+        .ToList();
+
+    bool isAdmin = roles.Contains("Admin");*@
 }
 
 <!DOCTYPE html>
@@ -24,33 +32,37 @@
             <div class="sidebar-heading text-white p-3">📂 WebArsip</div>
             <div class="list-group list-group-flush">
                 <a asp-controller="Dashboard" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
+                class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
                     🏠 <span>Dashboard</span>
                 </a>
                 <a asp-controller="Document" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
+                class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
                     📄 <span>Documents</span>
                 </a>
-                <a asp-controller="User" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
-                    👤 <span>Users</span>
-                </a>
-                <a asp-controller="Role" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")">
-                    🔑 <span>Roles</span>
-                </a>
-                <a asp-controller="Permission" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")">
-                    ⚙ <span>Permissions</span>
-                </a>
-                <a asp-controller="UserPermission" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserPermission" ? "active" : "")">
-                    👤⚙ <span>User Permissions</span>
-                </a>
-                <a asp-controller="AuditLog" asp-action="Index"
-                   class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLog" ? "active" : "")">
-                    📜 <span>Audit Logs</span>
-                </a>
+
+               @* @if (isAdmin)
+                {*@
+                    <a asp-controller="User" asp-action="Index"
+                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
+                        👤 <span>Users</span>
+                    </a>
+                    <a asp-controller="Role" asp-action="Index"
+                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")">
+                        🔑 <span>Roles</span>
+                    </a>
+                    <a asp-controller="Permission" asp-action="Index"
+                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")">
+                        ⚙ <span>Permissions</span>
+                    </a>
+                    <a asp-controller="UserPermission" asp-action="Index"
+                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserPermission" ? "active" : "")">
+                        👤⚙ <span>User Permissions</span>
+                    </a>
+                    <a asp-controller="AuditLog" asp-action="Index"
+                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLog" ? "active" : "")">
+                        📜 <span>Audit Logs</span>
+                    </a>
+                @*}*@
             </div>
             <form asp-controller="Auth" asp-action="Logout" method="post" class="p-3">
                 <button type="submit" class="btn btn-danger w-100">🚪 Logout</button>

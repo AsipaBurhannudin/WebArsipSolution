@@ -23,7 +23,7 @@
 
     @{
         var apiBase = "http://localhost:5287";
-        var fileUrl = $"{apiBase}/api/document/previewfile/{Model.DocId}";
+        var fileUrl = $"{apiBase}/api/document/preview/{Model.DocId}";
         var ext = System.IO.Path.GetExtension(Model.FilePath)?.ToLowerInvariant() ?? "";
     }
 

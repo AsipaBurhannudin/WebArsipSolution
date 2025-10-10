@@ -49,7 +49,6 @@ namespace WebArsip.Api.Controllers
             return Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         }
 
-        // 📘 GET: /api/document
         [HttpGet]
         public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
@@ -98,7 +97,6 @@ namespace WebArsip.Api.Controllers
             return Ok(result);
         }
 
-        // 📘 GET: /api/document/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
@@ -118,7 +116,6 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 📘 POST: /api/document
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
@@ -152,7 +149,6 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 📘 PUT: /api/document/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
@@ -180,7 +176,6 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 📘 DELETE: /api/document/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
@@ -196,26 +191,9 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 📥 DOWNLOAD
-        [HttpGet("download/{id}")]
-        public async Task<IActionResult> DownloadDocument(int id)
-        {
-            var doc = await _context.Documents.FindAsync(id);
-            if (doc == null) return NotFound("Dokumen tidak ditemukan.");
-
-            var fullPath = GetStorageFilePath(doc.FilePath);
-            if (!System.IO.File.Exists(fullPath))
-                return NotFound("File tidak ditemukan di server.");
-
-            var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
-            var contentType = "application/octet-stream";
-            var fileName = doc.OriginalFileName ?? Path.GetFileName(fullPath);
-            return File(stream, contentType, fileName);
-        }
-
         [AllowAnonymous]
-        [HttpGet("previewfile/{id}")]
-        public async Task<IActionResult> PreviewFile(int id)
+        [HttpGet("stream/{id}")]
+        public async Task<IActionResult> StreamFile(int id)
         {
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null || string.IsNullOrEmpty(doc.FilePath))
@@ -223,11 +201,38 @@ namespace WebArsip.Api.Controllers
 
             var storagePath = Path.Combine(
                 Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                "WebArsipStorage", "uploads");
+                "WebArsipStorage",
+                "uploads"
+            );
 
             var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath));
+
             if (!System.IO.File.Exists(filePath))
-                return NotFound();
+                return NotFound("File not found on server.");
+
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            var contentType = "application/octet-stream";
+
+            return File(stream, contentType, doc.OriginalFileName ?? Path.GetFileName(filePath));
+        }
+
+        [AllowAnonymous]
+        [HttpGet("preview/{id}")]
+        public async Task<IActionResult> PreviewFile(int id)
+        {
+            var doc = await _context.Documents.FindAsync(id);
+            if (doc == null || string.IsNullOrEmpty(doc.FilePath))
+                return NotFound("Dokumen tidak ditemukan.");
+
+            var storagePath = Path.Combine(
+                Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
+                "WebArsipStorage",
+                "uploads"
+            );
+            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath));
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("File tidak ditemukan di server.");
 
             var ext = Path.GetExtension(filePath).ToLowerInvariant();
             var mimeType = ext switch
@@ -240,10 +245,10 @@ namespace WebArsip.Api.Controllers
                 _ => "application/octet-stream"
             };
 
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            return File(stream, mimeType, enableRangeProcessing: true);
+            // 🟢 inline, bukan attachment
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            Response.Headers.Add("Content-Disposition", "inline; filename=" + doc.OriginalFileName);
+            return File(fileBytes, mimeType);
         }
-
-
     }
 }

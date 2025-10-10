@@ -87,7 +87,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowMvc",
         policy => policy
-            .WithOrigins("http://localhost:5077") // port MVC
+            .WithOrigins("http://localhost:5077")
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -176,6 +176,27 @@ app.UseCors("AllowMvc");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+/*app.Use(async (context, next) =>
+{
+    if (context.User.Identity?.IsAuthenticated == true)
+    {
+        var role = context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        var path = context.Request.Path.Value?.ToLower();
+
+        if (path != null && !string.IsNullOrEmpty(role))
+        {
+            if ((path.Contains("/user") || path.Contains("/role") || path.Contains("/permission")) && role != "Admin")
+            {
+                context.Response.Redirect("/AccessDenied");
+                return;
+            }
+        }
+    }
+
+    await next();
+});*/
 
 var storagePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads");
 app.UseStaticFiles(new StaticFileOptions
