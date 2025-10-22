@@ -7,7 +7,6 @@ using static WebArsip.Mvc.Controllers.DocumentController;
 
 namespace WebArsip.Mvc.Controllers
 {
-    [Authorize(Roles="Admin")]
     public class PermissionController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;

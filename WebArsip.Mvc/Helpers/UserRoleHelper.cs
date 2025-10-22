@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 using Microsoft.Extensions.DependencyInjection;
 using WebArsip.Infrastructure.DbContexts;
 
@@ -6,23 +7,19 @@ namespace WebArsip.Mvc.Helpers
 {
     public static class UserRoleHelper
     {
-       /* public static bool HasAccess(HttpContext context, string permissionKey)
-        {
-            var claims = context.User.Claims
-                .Where(c => c.Type == "Permission")
-                .Select(c => c.Value)
-                .ToList();
-
-            return claims.Contains(permissionKey);
-        }*/
         public static bool IsLoggedIn(HttpContext httpContext) =>
-            !string.IsNullOrEmpty(httpContext.Session.GetString("UserEmail"));
+            httpContext.User?.Identity?.IsAuthenticated ?? false;
 
         public static string? GetUserEmail(HttpContext httpContext) =>
-            httpContext.Session.GetString("UserEmail");
+            httpContext.User?.FindFirst(ClaimTypes.Name)?.Value
+            ?? httpContext.Session.GetString("UserEmail");
 
         public static string[] GetUserRoles(HttpContext httpContext)
         {
+            var roleClaim = httpContext.User?.FindFirst(ClaimTypes.Role)?.Value;
+            if (!string.IsNullOrEmpty(roleClaim))
+                return new[] { roleClaim };
+
             var roles = httpContext.Session.GetString("UserRole");
             return string.IsNullOrEmpty(roles) ? Array.Empty<string>() : roles.Split(',');
         }
@@ -30,7 +27,6 @@ namespace WebArsip.Mvc.Helpers
         public static bool HasAccess(HttpContext httpContext, string feature, int? docId = null)
         {
             var roles = GetUserRoles(httpContext);
-
             if (roles.Contains("Admin"))
                 return true;
 

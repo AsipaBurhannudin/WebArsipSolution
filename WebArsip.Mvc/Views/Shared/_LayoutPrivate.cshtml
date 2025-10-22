@@ -1,14 +1,7 @@
-﻿@using System.Security.Claims
-@using WebArsip.Mvc.Helpers
+﻿@using WebArsip.Mvc.Helpers
 @{
-    var email = UserRoleHelper.GetUserEmail(Context);
-
-    @*var roles = Context.User.Claims
-        .Where(c => c.Type == ClaimTypes.Role)
-        .Select(c => c.Value)
-        .ToList();
-
-    bool isAdmin = roles.Contains("Admin");*@
+    var email = UserRoleHelper.GetUserEmail(Context) ?? "Unknown";
+    var menus = SidebarHelper.GetAccessibleMenus(Context);
 }
 
 <!DOCTYPE html>
@@ -16,14 +9,18 @@
 <head>
     <title>@ViewData["Title"] - WebArsip</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Bootstrap -->
+
+    <!-- 🔹 CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
-    <!-- DataTables -->
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- 🔹 DataTables CSS -->
+    <link rel="stylesheet"
+          href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+
+    @*<!-- 🔹 SweetAlert2 CSS (opsional tapi bagus untuk style konsisten) -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.min.css" />*@
 </head>
 <body>
     <div id="wrapper">
@@ -31,59 +28,25 @@
         <div id="sidebar-wrapper">
             <div class="sidebar-heading text-white p-3">📂 WebArsip</div>
             <div class="list-group list-group-flush">
-                <a asp-controller="Dashboard" asp-action="Index"
-                class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" ? "active" : "")">
-                    🏠 <span>Dashboard</span>
-                </a>
-                <a asp-controller="Document" asp-action="Index"
-                class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Document" ? "active" : "")">
-                    📄 <span>Documents</span>
-                </a>
-
-               @* @if (isAdmin)
-                {*@
-                    <a asp-controller="User" asp-action="Index"
-                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
-                        👤 <span>Users</span>
+                @foreach (var menu in menus)
+                {
+                    <a asp-controller="@menu.Controller" asp-action="Index"
+                       class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == menu.Controller ? "active" : "")">
+                        @menu.Label
                     </a>
-                    <a asp-controller="Role" asp-action="Index"
-                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Role" ? "active" : "")">
-                        🔑 <span>Roles</span>
-                    </a>
-                    <a asp-controller="Permission" asp-action="Index"
-                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "Permission" ? "active" : "")">
-                        ⚙ <span>Permissions</span>
-                    </a>
-                    <a asp-controller="UserPermission" asp-action="Index"
-                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "UserPermission" ? "active" : "")">
-                        👤⚙ <span>User Permissions</span>
-                    </a>
-                    <a asp-controller="AuditLog" asp-action="Index"
-                    class="list-group-item bg-dark @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLog" ? "active" : "")">
-                        📜 <span>Audit Logs</span>
-                    </a>
-                @*}*@
+                }
             </div>
+
             <form asp-controller="Auth" asp-action="Logout" method="post" class="p-3">
                 <button type="submit" class="btn btn-danger w-100">🚪 Logout</button>
             </form>
         </div>
 
-        <!-- 🔹 Content -->
+        <!-- 🔹 Main content -->
         <div id="page-content-wrapper">
-            <!-- Navbar Fixed -->
-            <nav class="navbar navbar-light bg-light border-bottom d-flex justify-content-between">
-                <!-- Kiri: tombol expand -->
-                <div>
-                    <button class="btn btn-outline-secondary" id="menu-toggle">☰</button>
-                </div>
-
-                <!-- Kanan: email user -->
-                <div>
-                    <span class="navbar-text">
-                        <strong>@email</strong>
-                    </span>
-                </div>
+            <nav class="navbar navbar-light bg-light border-bottom d-flex justify-content-between align-items-center px-3">
+                <div><button class="btn btn-outline-secondary" id="menu-toggle">☰</button></div>
+                <div><span class="navbar-text"><strong>@email</strong></span></div>
             </nav>
 
             <div class="container-fluid mt-5">
@@ -91,13 +54,22 @@
             </div>
         </div>
     </div>
-    <!-- jQuery & Bootstrap -->
+
+    <!-- ================== JAVASCRIPT ================== -->
+    <!-- ✅ jQuery harus di-load lebih dulu -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+    <!-- ✅ Bootstrap -->
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- DataTables -->
+
+    <!-- ✅ DataTables (urutan penting: jQuery dulu baru ini) -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <!-- Toggle Sidebar -->
+
+    <!-- ✅ SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- ✅ Sidebar toggle -->
     <script>
         $("#menu-toggle").click(function (e) {
             e.preventDefault();
@@ -105,6 +77,7 @@
         });
     </script>
 
+    <!-- ✅ Tempat script tambahan tiap halaman -->
     @RenderSection("Scripts", required: false)
 </body>
 </html>

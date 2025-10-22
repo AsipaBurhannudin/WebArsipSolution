@@ -14,6 +14,7 @@ namespace WebArsip.Mvc.Controllers
             _clientFactory = clientFactory;
         }
 
+        // 🔹 Helper untuk membuat HttpClient dengan JWT
         private HttpClient CreateClient()
         {
             var client = _clientFactory.CreateClient("WebArsipApi");
@@ -23,6 +24,7 @@ namespace WebArsip.Mvc.Controllers
             return client;
         }
 
+        // 🔹 List dokumen
         public async Task<IActionResult> Index()
         {
             var client = CreateClient();
@@ -36,13 +38,14 @@ namespace WebArsip.Mvc.Controllers
 
             var body = await response.Content.ReadAsStringAsync();
             var paged = JsonConvert.DeserializeObject<PagedResult<DocumentViewModel>>(body);
-
             return View(paged?.Items ?? new List<DocumentViewModel>());
         }
 
+        // 🔹 Create GET
         [HttpGet]
         public IActionResult Create() => View();
 
+        // 🔹 Create POST
         [HttpPost]
         public async Task<IActionResult> Create(DocumentViewModel model, IFormFile FileUpload)
         {
@@ -59,8 +62,9 @@ namespace WebArsip.Mvc.Controllers
                     return RedirectToAction(nameof(Create));
                 }
 
-                var storagePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                                               "WebArsipStorage", "uploads");
+                var storagePath = Path.Combine(
+                    Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
+                    "WebArsipStorage", "uploads");
                 Directory.CreateDirectory(storagePath);
 
                 var fileName = $"{Guid.NewGuid()}{ext}";
@@ -68,7 +72,7 @@ namespace WebArsip.Mvc.Controllers
                 using (var stream = new FileStream(fullPath, FileMode.Create))
                     await FileUpload.CopyToAsync(stream);
 
-                model.FilePath = fileName; 
+                model.FilePath = fileName;
                 model.OriginalFileName = FileUpload.FileName;
             }
 
@@ -85,6 +89,7 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // 🔹 Detail Dokumen
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
@@ -98,6 +103,7 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
+        // 🔹 Edit GET
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -110,6 +116,7 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
+        // 🔹 Edit POST
         [HttpPost]
         public async Task<IActionResult> Edit(DocumentViewModel model, IFormFile? FileUpload)
         {
@@ -117,17 +124,13 @@ namespace WebArsip.Mvc.Controllers
 
             var client = CreateClient();
 
+            // Ambil data lama dari API
+            DocumentViewModel? oldDoc = null;
             var existingResponse = await client.GetAsync($"document/{model.DocId}");
             if (existingResponse.IsSuccessStatusCode)
             {
-                var oldDoc = JsonConvert.DeserializeObject<DocumentViewModel>(
-                    await existingResponse.Content.ReadAsStringAsync());
-
-                if (FileUpload == null)
-                {
-                    model.FilePath = oldDoc.FilePath;
-                    model.OriginalFileName = oldDoc.OriginalFileName;
-                }
+                var oldData = await existingResponse.Content.ReadAsStringAsync();
+                oldDoc = JsonConvert.DeserializeObject<DocumentViewModel>(oldData);
             }
 
             if (FileUpload != null && FileUpload.Length > 0)
@@ -141,8 +144,9 @@ namespace WebArsip.Mvc.Controllers
                     return RedirectToAction(nameof(Edit), new { id = model.DocId });
                 }
 
-                var storagePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                                               "WebArsipStorage", "uploads");
+                var storagePath = Path.Combine(
+                    Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
+                    "WebArsipStorage", "uploads");
                 Directory.CreateDirectory(storagePath);
 
                 var fileName = $"{Guid.NewGuid()}{ext}";
@@ -152,6 +156,12 @@ namespace WebArsip.Mvc.Controllers
 
                 model.FilePath = fileName;
                 model.OriginalFileName = FileUpload.FileName;
+            }
+            else if (oldDoc != null)
+            {
+                // 🔹 Tidak upload baru → tetap pakai file lama
+                model.FilePath = oldDoc.FilePath;
+                model.OriginalFileName = oldDoc.OriginalFileName;
             }
 
             var response = await client.PutAsJsonAsync($"document/{model.DocId}", model);
@@ -165,6 +175,7 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // 🔹 Delete
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -177,6 +188,7 @@ namespace WebArsip.Mvc.Controllers
             return Json(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
+        // 🔹 Download
         [HttpGet]
         public async Task<IActionResult> Download(int id)
         {
@@ -189,15 +201,14 @@ namespace WebArsip.Mvc.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"')
-                ?? "file";
+            var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
             var stream = await response.Content.ReadAsStreamAsync();
-            var contentType = response.Content.Headers.ContentType?.ToString()
-                ?? "application/octet-stream";
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
 
             return File(stream, contentType, fileName);
         }
 
+        // 🔹 Preview (tampilkan langsung)
         [HttpGet]
         public async Task<IActionResult> Preview(int id)
         {
@@ -207,11 +218,14 @@ namespace WebArsip.Mvc.Controllers
 
             var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
             var stream = await response.Content.ReadAsStreamAsync();
-            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+            var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/pdf";
 
+            // 🔹 tampilkan langsung di iframe
+            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{fileName}\"");
             return File(stream, contentType);
         }
 
+        // 🔹 Model pagination helper
         public class PagedResult<T>
         {
             public int Page { get; set; }

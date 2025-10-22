@@ -9,7 +9,7 @@
     }
   },
   "profiles": {
-    "http": {
+    "WebArsip.Api": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,

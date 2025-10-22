@@ -9,6 +9,14 @@ namespace WebArsip.Mvc.Controllers
     {
         private readonly IHttpClientFactory _clientFactory;
 
+        private HttpClient CreateClient()
+        {
+            var client = _clientFactory.CreateClient("WebArsipApi");
+            var token = HttpContext.Session.GetString("JWToken");
+            if (!string.IsNullOrEmpty(token))
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            return client;
+        }
         public DashboardController(IHttpClientFactory clientFactory)
         {
             _clientFactory = clientFactory;
@@ -16,10 +24,11 @@ namespace WebArsip.Mvc.Controllers
 
         public async Task<IActionResult> Index()
         {
-            if (!UserRoleHelper.IsLoggedIn(HttpContext))
-                return RedirectToAction("UnauthorizedPage", "Error");
 
-            var client = _clientFactory.CreateClient("WebArsipApi");
+            if (!UserRoleHelper.IsLoggedIn(HttpContext))
+                return RedirectToAction("Login", "Auth");
+
+            var client = CreateClient();
 
             var docCount = await GetCountAsync(client, "document/count");
             var userCount = await GetCountAsync(client, "user/count");
@@ -39,6 +48,9 @@ namespace WebArsip.Mvc.Controllers
                 UserCount = userCount,
                 AuditLogCount = logCount
             };
+
+            if (docCount == 0 && userCount == 0 && logCount == 0)
+                TempData["Warning"] = "Gagal memuat statistik dashboard. Silakan refresh.";
 
             ViewBag.AuditLogStats = stats;
             return View(dashboard);

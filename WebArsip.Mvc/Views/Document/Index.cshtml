@@ -1,33 +1,31 @@
 ﻿@using WebArsip.Mvc.Helpers
-@using WebArsip.Mvc.Models.ViewModels
-@model IEnumerable<DocumentViewModel>
+@model IEnumerable<WebArsip.Mvc.Models.ViewModels.DocumentViewModel>
 
 @{
-    ViewData["Title"] = "Documents";
-    Layout = "_LayoutPrivate";
+    ViewData["Title"] = "📄 Document List";
+    var canCreate = UserRoleHelper.HasAccess(Context, "Document.Create");
+    var canEdit = UserRoleHelper.HasAccess(Context, "Document.Edit");
+    var canDelete = UserRoleHelper.HasAccess(Context, "Document.Delete");
+    var canDownload = UserRoleHelper.HasAccess(Context, "Document.Download");
+    var canView = UserRoleHelper.HasAccess(Context, "Document.View");
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>📄 Documents</h2>
+<h2 class="mb-9">📄 Document List</h2>
 
-    @if (UserRoleHelper.HasAccess(Context, "Document.Create"))
-    {
-        <a asp-controller="Document" asp-action="Create" class="btn btn-primary">➕ Add Document</a>
-    }
-</div>
+@if (canCreate)
+{
+    <a asp-action="Create" class="btn btn-primary mb-3">+ Add New Document</a>
+}
 
-<table id="documentTable" class="table table-striped table-bordered">
-    <thead>
+<table id="documentTable" class="table table-striped table-bordered w-100">
+    <thead class="table-dark">
         <tr>
             <th>No</th>
-            <th>ID</th>
             <th>Title</th>
             <th>Description</th>
+            <th>Created Date</th>
             <th>Status</th>
-            <th>Created</th>
-            <th>Updated</th>
-            <th>File</th>
-            <th>Actions</th>
+            <th style="width: 230px;">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -35,66 +33,86 @@
         {
             <tr>
                 <td></td>
-                <td>@doc.DocId</td>
                 <td>@doc.Title</td>
                 <td>@doc.Description</td>
+                <td>@doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@doc.Status</td>
-                <td>@doc.CreatedDate.ToString("yyyy-MM-dd HH:mm")</td>
-                <td>@(doc.UpdatedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
-
                 <td>
-                    @if (UserRoleHelper.HasAccess(Context, "Document.Download") && !string.IsNullOrEmpty(doc.FilePath))
+                    @if (canView)
                     {
-                        <a href="@doc.FilePath" target="_blank" class="btn-download btn btn-sm btn-success" data-id="@doc.DocId" data-name="@doc.Title">📂 Download</a>
+                        <button class="btn btn-info btn-sm btn-preview"
+                                data-id="@doc.DocId"
+                                data-filepath="@doc.FilePath"
+                                data-name="@doc.Title">
+                            👁 Preview
+                        </button>
                     }
-
-                    <button class="btn btn-info btn-preview" data-id="@doc.DocId" data-filepath="@doc.FilePath">
-                        👁 Preview
-                    </button>
-                </td>
-
-                <td>
-                    <a asp-action="Details" asp-route-id="@doc.DocId" class="btn btn-sm btn-info">✏ Details</a>
-
-                    @if (UserRoleHelper.HasAccess(Context, "Document.Edit"))
+                    @if (canDownload)
                     {
-                        <a asp-action="Edit" asp-route-id="@doc.DocId" class="btn btn-sm btn-warning">✏ Edit</a>
+                        <button class="btn btn-secondary btn-sm btn-download"
+                                data-id="@doc.DocId"
+                                data-name="@doc.Title">
+                            ⬇ Download
+                        </button>
                     }
-
-                    @if (UserRoleHelper.HasAccess(Context, "Document.Delete"))
+                    @if (canEdit)
                     {
-                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="@doc.DocId" data-title="@doc.Title">🗑 Delete</button>
+                        <a asp-action="Edit" asp-route-id="@doc.DocId"
+                           class="btn btn-warning btn-sm text-white">✏ Edit</a>
+                    }
+                    @if (canDelete)
+                    {
+                        <button class="btn btn-danger btn-sm delete-btn"
+                                data-id="@doc.DocId"
+                                data-title="@doc.Title">
+                            🗑 Delete
+                        </button>
                     }
                 </td>
             </tr>
         }
     </tbody>
 </table>
-<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+
+<!-- 🔹 Modal Preview -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Preview Dokumen</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="previewModalLabel">Document Preview</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <iframe id="previewFrame" width="100%" height="700px" frameborder="0"></iframe>
+            <div class="modal-body p-0" style="height: 85vh;">
+                <iframe id="previewFrame" src="" width="100%" height="100%" frameborder="0"></iframe>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <script>
-                $(document).ready(function () {
-            var table = $('#documentTable').DataTable({ pageLength: 10 });
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
+    <script>
+        $(document).ready(function () {
+
+            // ✅ Inisialisasi DataTables
+            var table = $('#documentTable').DataTable({
+                pageLength: 10,
+                responsive: true,
+                autoWidth: false
+            });
+
+            // Nomor urut otomatis
             table.on('order.dt search.dt', function () {
-                table.column(0, { search: 'applied', order: 'applied' }).nodes().each(function (cell, i) {
-                    cell.innerHTML = i + 1;
-                });
+                table.column(0, { search: 'applied', order: 'applied' })
+                    .nodes()
+                    .each(function (cell, i) {
+                        cell.innerHTML = i + 1;
+                    });
             }).draw();
 
+            // ✅ Delete document
             $(document).on('click', '.delete-btn', function () {
                 var btn = $(this);
                 var id = btn.data('id');
@@ -102,7 +120,7 @@
 
                 Swal.fire({
                     title: "Yakin ingin hapus?",
-                    text: "Dokumen \"" + title + "\" akan dihapus permanen.",
+                    text: `Dokumen "${title}" akan dihapus permanen.`,
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonText: "Ya, hapus!",
@@ -114,7 +132,12 @@
                             type: 'POST',
                             success: function (res) {
                                 if (res.success) {
-                                    Swal.fire({ icon: 'success', title: res.message, timer: 1500, showConfirmButton: false });
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: res.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
                                     table.row(btn.closest('tr')).remove().draw(false);
                                 } else {
                                     Swal.fire('Error', res.message, 'error');
@@ -128,119 +151,82 @@
                 });
             });
 
-            $(document).on('click', '.btn-download', function (e) {
-            e.preventDefault();
-            const id = $(this).data('id');
-            const name = $(this).data('name');
+            // ✅ Preview File (PDF/Word/Excel)
+            $(document).on('click', '.btn-preview', function () {
+                const docId = $(this).data("id");
+                const filePath = $(this).data("filepath");
+                const ext = filePath.split('.').pop().toLowerCase();
 
-            Swal.fire({
-                title: 'Download File?',
-                text: `Apakah kamu ingin mendownload dokumen "${name}"?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, download',
-                cancelButtonText: 'Batal',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
+                let srcUrl = "";
+
+                if (ext === "pdf") {
+                    srcUrl = `http://localhost:5287/api/document/preview/${docId}`;
+                } else if (["doc", "docx", "xls", "xlsx"].includes(ext)) {
+                    const encoded = encodeURIComponent(`http://localhost:5287/api/document/preview/${docId}`);
+                    srcUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encoded}`;
+                } else {
                     Swal.fire({
-                        title: 'Downloading...',
-                        html: '<div class="spinner-border text-primary" role="status"></div>',
-                        showConfirmButton: false,
-                        allowOutsideClick: false
+                        icon: "warning",
+                        title: "File tidak bisa dipreview",
+                        text: "Tipe file ini tidak mendukung preview.",
                     });
-
-                    window.location.href = `/Document/Download/${id}`;
-
-                    setTimeout(() => {
-                        Swal.close();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Download dimulai!',
-                            text: 'File kamu sedang didownload.',
-                            timer: 1800,
-                            showConfirmButton: false
-                        });
-                    }, 1500);
+                    return;
                 }
-            });
-        });
 
-                $(document).on("click", ".btn-preview", function () {
-            const docId = $(this).data("id");
-            const filePath = $(this).data("filepath");
-            const ext = filePath.split('.').pop().toLowerCase();
-            let srcUrl = "";
-
-            if (ext === "pdf") {
-                srcUrl = `http://localhost:5287/api/document/preview/${docId}`;
-            } else if (["doc", "docx", "xls", "xlsx"].includes(ext)) {
-                   const encoded = encodeURIComponent(`http://localhost:5287/api/document/preview/${docId}`);
-                   srcUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encoded}`;
-            } else {
-                srcUrl = "";
-            }
-
-            if (srcUrl) {
                 $("#previewFrame").attr("src", srcUrl);
                 $("#previewModal").modal("show");
-            } else {
-                Swal.fire({
-                    icon: "warning",
-                    title: "File tidak bisa dipreview",
-                    text: "Tipe file ini tidak mendukung preview.",
-                });
-            }
-        });
-
-        $(document).on('click', '.btn-download', function (e) {
-            e.preventDefault();
-            const id = $(this).data('id');
-            const name = $(this).data('name');
-
-            Swal.fire({
-                title: 'Download File?',
-                text: `Apakah kamu ingin mendownload dokumen "${name}"?`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, download',
-                cancelButtonText: 'Batal',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Downloading...',
-                        html: '<div class="spinner-border text-primary" role="status"></div>',
-                        showConfirmButton: false,
-                        allowOutsideClick: false
-                    });
-
-                    window.location.href = `/Document/Download/${id}`;
-
-                    setTimeout(() => {
-                        Swal.close();
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Download dimulai!',
-                            text: 'File kamu sedang didownload.',
-                            timer: 1800,
-                            showConfirmButton: false
-                        });
-                    }, 1500);
-                }
             });
-        });
 
+            // ✅ Download File
+            $(document).on('click', '.btn-download', function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+
+                Swal.fire({
+                    title: 'Download File?',
+                    text: `Apakah kamu ingin mendownload dokumen "${name}"?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, download',
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Downloading...',
+                            html: '<div class="spinner-border text-primary" role="status"></div>',
+                            showConfirmButton: false,
+                            allowOutsideClick: false
+                        });
+
+                        window.location.href = `/Document/Download/${id}`;
+
+                        setTimeout(() => {
+                            Swal.close();
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Download dimulai!',
+                                text: 'File kamu sedang didownload.',
+                                timer: 1800,
+                                showConfirmButton: false
+                            });
+                        }, 1500);
+                    }
+                });
+            });
+
+            // ✅ Toast Notifikasi
         @if (TempData["Success"] != null)
         {
             <text>
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '@TempData["Success"]', showConfirmButton: false, timer: 2000 });
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '@TempData["Success"]', showConfirmButton: false, timer: 2000 });
             </text>
         }
         @if (TempData["Error"] != null)
         {
             <text>
-                    Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: '@TempData["Error"]', showConfirmButton: false, timer: 2000 });
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: '@TempData["Error"]', showConfirmButton: false, timer: 2000 });
             </text>
         }
         });

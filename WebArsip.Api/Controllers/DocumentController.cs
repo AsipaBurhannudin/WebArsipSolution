@@ -201,19 +201,18 @@ namespace WebArsip.Api.Controllers
 
             var storagePath = Path.Combine(
                 Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                "WebArsipStorage",
-                "uploads"
+                "WebArsipStorage", "uploads"
             );
 
-            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath));
-
+            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath ?? ""));
             if (!System.IO.File.Exists(filePath))
                 return NotFound("File not found on server.");
 
             var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            var contentType = "application/octet-stream";
+            var mimeType = "application/octet-stream";
 
-            return File(stream, contentType, doc.OriginalFileName ?? Path.GetFileName(filePath));
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            return File(stream, mimeType, doc.OriginalFileName ?? Path.GetFileName(filePath));
         }
 
         [AllowAnonymous]
@@ -226,10 +225,9 @@ namespace WebArsip.Api.Controllers
 
             var storagePath = Path.Combine(
                 Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                "WebArsipStorage",
-                "uploads"
+                "WebArsipStorage", "uploads"
             );
-            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath));
+            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath ?? ""));
 
             if (!System.IO.File.Exists(filePath))
                 return NotFound("File tidak ditemukan di server.");
@@ -245,10 +243,14 @@ namespace WebArsip.Api.Controllers
                 _ => "application/octet-stream"
             };
 
-            // 🟢 inline, bukan attachment
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
-            Response.Headers.Add("Content-Disposition", "inline; filename=" + doc.OriginalFileName);
-            return File(fileBytes, mimeType);
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            Response.Headers["Expires"] = "0";
+            // ⚠️ Penting: gunakan inline agar tampil, bukan download
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{doc.OriginalFileName}\"";
+
+            return new FileStreamResult(stream, mimeType);
         }
     }
 }
