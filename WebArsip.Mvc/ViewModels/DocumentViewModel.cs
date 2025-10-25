@@ -9,6 +9,7 @@
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string Status { get; set; } = string.Empty;
+        public int Version { get; set; } = 1;
         public string? OriginalFileName { get; set; }
     }
 }

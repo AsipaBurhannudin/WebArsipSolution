@@ -8,6 +8,7 @@
         public string FilePath { get; set; } = string.Empty;
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public int Version { get; set; } = 1;
         public string Status { get; set; } = "Active";
         public string? OriginalFileName { get; set; }
 

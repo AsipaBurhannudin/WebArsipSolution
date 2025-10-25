@@ -4,32 +4,32 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.ComponentModel;
 using System.Text;
 using WebArsip.Core.Entities;
 using WebArsip.Infrastructure.DbContexts;
 using WebArsip.Infrastructure.Services;
-//using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Db Context
+// ✅ Database Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogService>();
 
-// Identity
-builder.Services.AddIdentityCore<User>(options => {
+// ✅ Identity (ubah dari AddIdentityCore → AddIdentity)
+builder.Services.AddIdentity<User, Role>(options =>
+{
     options.Password.RequireNonAlphanumeric = false;
     options.Password.RequireUppercase = false;
+    options.Password.RequiredLength = 6;
+    options.User.RequireUniqueEmail = true;
 })
-    .AddRoles<Role>()
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
 
-// Autentikasi JWT
+// ✅ JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -38,7 +38,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     var jwtSettings = builder.Configuration.GetSection("Jwt");
-    options.RequireHttpsMetadata = false; // penting buat dev lokal
+    options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -53,10 +53,10 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+builder.Services.AddAuthorization();
 
+// ✅ Controllers + Swagger + JWT Support
 builder.Services.AddControllers();
-
-// Swagger + JWT Support
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "WebArsip API", Version = "v1" });
@@ -87,9 +87,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// ✅ Logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
+// ✅ CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowMvc",
@@ -99,11 +101,11 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod()
             .AllowCredentials());
 });
-//OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
+// ✅ Build App
 var app = builder.Build();
 
-// Seeding default data untuk Role & Admin User
+// ✅ Seed default roles & admin
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -115,9 +117,7 @@ using (var scope = app.Services.CreateScope())
     foreach (var role in roles)
     {
         if (!await roleManager.RoleExistsAsync(role))
-        {
             await roleManager.CreateAsync(new Role { Name = role });
-        }
     }
 
     var adminEmail = "admin@company.com";
@@ -130,45 +130,37 @@ using (var scope = app.Services.CreateScope())
             UserName = adminEmail,
             Email = adminEmail,
             Name = "Administrator",
-            EmailConfirmed = true
+            EmailConfirmed = true,
+            IsActive = true // ✅ tambahkan agar admin aktif
         };
 
         var result = await userManager.CreateAsync(user, "Admin@123");
         if (result.Succeeded)
-        {
             await userManager.AddToRoleAsync(user, "Admin");
-        }
 
-
-        // Seed default data permission untuk Admin
+        // ✅ Seed Permission Admin
         var adminRole = await roleManager.FindByNameAsync("Admin");
-
-        if (adminRole != null)
+        if (adminRole != null && !await context.Permissions.AnyAsync(p => p.RoleId == adminRole.Id))
         {
-            bool hasPermission = await context.Permissions.AnyAsync(p => p.RoleId == adminRole.Id);
-
-            if (!hasPermission)
+            var documents = await context.Documents.ToListAsync();
+            foreach (var doc in documents)
             {
-                var documents = await context.Documents.ToListAsync();
-                foreach (var doc in documents)
+                context.Permissions.Add(new Permission
                 {
-                    context.Permissions.Add(new Permission
-                    {
-                        RoleId = adminRole.Id,
-                        DocId = doc.DocId,
-                        CanView = true,
-                        CanEdit = true,
-                        CanUpload = true,
-                        CanDelete = true
-                    });
-                }
-
-                await context.SaveChangesAsync();
+                    RoleId = adminRole.Id,
+                    DocId = doc.DocId,
+                    CanView = true,
+                    CanEdit = true,
+                    CanUpload = true,
+                    CanDelete = true
+                });
             }
+            await context.SaveChangesAsync();
         }
     }
 }
 
+// ✅ Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -176,7 +168,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
 
 app.UseCors("AllowMvc");
@@ -184,27 +175,7 @@ app.UseCors("AllowMvc");
 app.UseAuthentication();
 app.UseAuthorization();
 
-/*app.Use(async (context, next) =>
-{
-    if (context.User.Identity?.IsAuthenticated == true)
-    {
-        var role = context.User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value;
-
-        var path = context.Request.Path.Value?.ToLower();
-
-        if (path != null && !string.IsNullOrEmpty(role))
-        {
-            if ((path.Contains("/user") || path.Contains("/role") || path.Contains("/permission")) && role != "Admin")
-            {
-                context.Response.Redirect("/AccessDenied");
-                return;
-            }
-        }
-    }
-
-    await next();
-});*/
-
+// ✅ File upload static path
 var storagePath = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads");
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -214,6 +185,7 @@ app.UseStaticFiles(new StaticFileOptions
 
 app.MapControllers();
 
+// ✅ Handle redirect login 401
 app.Use(async (context, next) =>
 {
     if (context.Response.StatusCode == 302 &&

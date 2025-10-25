@@ -25,6 +25,7 @@
             <th>Description</th>
             <th>Created Date</th>
             <th>Status</th>
+            <th>Version</th>
             <th style="width: 230px;">Actions</th>
         </tr>
     </thead>
@@ -37,6 +38,7 @@
                 <td>@doc.Description</td>
                 <td>@doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                 <td>@doc.Status</td>
+                <td>@doc.Version</td>
                 <td>
                     @if (canView)
                     {
@@ -74,7 +76,6 @@
     </tbody>
 </table>
 
-<!-- 🔹 Modal Preview -->
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -96,14 +97,12 @@
     <script>
         $(document).ready(function () {
 
-            // ✅ Inisialisasi DataTables
             var table = $('#documentTable').DataTable({
                 pageLength: 10,
                 responsive: true,
                 autoWidth: false
             });
 
-            // Nomor urut otomatis
             table.on('order.dt search.dt', function () {
                 table.column(0, { search: 'applied', order: 'applied' })
                     .nodes()
@@ -112,7 +111,6 @@
                     });
             }).draw();
 
-            // ✅ Delete document
             $(document).on('click', '.delete-btn', function () {
                 var btn = $(this);
                 var id = btn.data('id');
@@ -151,7 +149,6 @@
                 });
             });
 
-            // ✅ Preview File (PDF/Word/Excel)
             $(document).on('click', '.btn-preview', function () {
                 const docId = $(this).data("id");
                 const filePath = $(this).data("filepath");
@@ -177,7 +174,6 @@
                 $("#previewModal").modal("show");
             });
 
-            // ✅ Download File
             $(document).on('click', '.btn-download', function (e) {
                 e.preventDefault();
                 const id = $(this).data('id');
@@ -216,7 +212,6 @@
                 });
             });
 
-            // ✅ Toast Notifikasi
         @if (TempData["Success"] != null)
         {
             <text>

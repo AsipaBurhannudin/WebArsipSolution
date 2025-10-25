@@ -23,31 +23,26 @@
                     <p>Sign in to your account</p>
                 </div>
 
-                <form asp-action="Login" method="post" id="loginForm">
-                    <!-- email -->
+                <form id="loginForm" method="post">
                     <div class="form-group">
                         <div class="input-wrapper">
-                            <input asp-for="Email" type="email" id="email" required autocomplete="email" placeholder=" " />
+                            <input asp-for="Email" type="email" id="email" required placeholder=" " />
                             <label for="email">Email</label>
                             <span class="focus-border"></span>
                         </div>
-                        <span class="text-danger" asp-validation-for="Email"></span>
                     </div>
 
-                    <!-- password -->
                     <div class="form-group">
                         <div class="input-wrapper password-wrapper">
-                            <input asp-for="Password" type="password" id="password" required autocomplete="current-password" placeholder="" />
+                            <input asp-for="Password" type="password" id="password" required placeholder="" />
                             <label for="password">Password</label>
-                            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Toggle password visibility">
+                            <button type="button" class="password-toggle" id="passwordToggle">
                                 <span class="eye-icon"></span>
                             </button>
                             <span class="focus-border"></span>
                         </div>
-                        <span class="text-danger" asp-validation-for="Password"></span>
                     </div>
 
-                    <!-- tombol login -->
                     <button type="submit" class="login-btn btn" id="loginBtn">
                         <span class="btn-text">Sign In</span>
                         <span class="btn-loader"></span>
@@ -57,7 +52,6 @@
         </div>
     </div>
     <script>
-        // Toast setup
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
@@ -66,41 +60,26 @@
             timerProgressBar: true
         });
 
-        // Success (login/logout)
         @if (TempData["SuccessMessage"] != null)
         {
             <text>
-                        Toast.fire({
-                            icon: 'success',
-                            title: '@TempData["SuccessMessage"]'
-                        });
+                    Toast.fire({
+                        icon: 'success',
+                        title: '@TempData["SuccessMessage"]'
+                    });
             </text>
         }
 
-        // Error (misalnya password salah / login gagal)
-        @if (!ViewData.ModelState.IsValid)
+        @if (TempData["ErrorMessage"] != null)
         {
-            var errors = string.Join("\\n", ViewData.ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage));
-            if (!string.IsNullOrEmpty(errors))
-            {
-                <text>
-                                    Toast.fire({
-                                        icon: 'error',
-                                        title: '@TempData["ErrorMessage"]'
-                                    });
-                </text>
-            }
-        }
-
-         window.serverErrors = [];
-        @if (!ViewData.ModelState.IsValid)
-        {
-            foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-            {
-                <text>window.serverErrors.push("@error.ErrorMessage");</text>
-            }
+            <text>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login gagal!',
+                        text: '@TempData["ErrorMessage"]',
+                        confirmButtonColor: '#d33'
+                    });
+            </text>
         }
     </script>
     <partial name="_ValidationScriptsPartial" />

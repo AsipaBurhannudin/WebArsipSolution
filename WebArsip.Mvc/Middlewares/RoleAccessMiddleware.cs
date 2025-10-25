@@ -17,7 +17,7 @@ namespace WebArsip.Mvc.Middlewares
         {
             var path = context.Request.Path.Value?.ToLower() ?? "";
 
-            // ✅ Lewati middleware untuk halaman umum
+            // ✅ Skip public/unauthenticated pages
             if (string.IsNullOrEmpty(path) ||
                 path == "/" ||
                 path.StartsWith("/auth") ||
@@ -31,9 +31,9 @@ namespace WebArsip.Mvc.Middlewares
                 return;
             }
 
-            // ✅ Pastikan user sudah login (cookie valid)
+            // ✅ Pastikan user sudah login
             var user = context.User;
-            if (user == null || !user.Identity?.IsAuthenticated == true)
+            if (user == null || user.Identity == null || !user.Identity.IsAuthenticated)
             {
                 context.Response.Redirect("/Auth/Login");
                 return;
@@ -41,7 +41,7 @@ namespace WebArsip.Mvc.Middlewares
 
             var role = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
 
-            // 🔒 Batasi halaman admin
+            // 🔒 Batasi akses non-admin
             if ((path.Contains("/user") ||
                  path.Contains("/role") ||
                  path.Contains("/permission") ||

@@ -45,7 +45,8 @@ namespace WebArsip.Api.Controllers
                     UserId = u.Id,
                     Name = u.Name,
                     Email = u.Email,
-                    RoleName = roleName
+                    RoleName = roleName,
+                    IsActive = u.IsActive
                 });
             }
 
@@ -74,7 +75,8 @@ namespace WebArsip.Api.Controllers
                 UserId = user.Id,
                 Name = user.Name,
                 Email = user.Email,
-                RoleName = roleName
+                RoleName = roleName,
+                IsActive = user.IsActive
             };
         }
 
@@ -114,17 +116,27 @@ namespace WebArsip.Api.Controllers
             user.Name = dto.Name;
             user.Email = dto.Email;
             user.UserName = dto.Email;
+            user.IsActive = dto.IsActive;
 
             var result = await _userManager.UpdateAsync(user);
             if (!result.Succeeded)
                 return BadRequest(result.Errors);
 
+            // Role handling aman
             var currentRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentRoles);
 
-            var newRole = await _roleManager.FindByIdAsync(dto.RoleId.ToString());
-            if (newRole != null)
-                await _userManager.AddToRoleAsync(user, newRole.Name);
+            if (dto.RoleId > 0)
+            {
+                var newRole = await _roleManager.FindByIdAsync(dto.RoleId.ToString());
+                if (newRole != null)
+                    await _userManager.AddToRoleAsync(user, newRole.Name);
+            }
+            else if (!currentRoles.Any())
+            {
+                // fallback default
+                await _userManager.AddToRoleAsync(user, "Compliance");
+            }
 
             return NoContent();
         }

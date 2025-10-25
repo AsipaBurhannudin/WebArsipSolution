@@ -5,6 +5,7 @@ using WebArsip.Mvc.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using WebArsip.Core.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using Azure;
 
 namespace WebArsip.Mvc.Controllers
 {
@@ -121,10 +122,26 @@ namespace WebArsip.Mvc.Controllers
             if (!response.IsSuccessStatusCode) return RedirectToAction(nameof(Index));
 
             var body = await response.Content.ReadAsStringAsync();
-            var user = JsonConvert.DeserializeObject<UserEditViewModel>(body);
+            var userData = JsonConvert.DeserializeObject<UserViewModel>(body);
 
-            user.Roles = await GetRoles();
-            return View(user);
+            var allRoles = await GetRoles();
+
+            // Temukan RoleId berdasarkan nama role user
+            var selectedRole = allRoles.FirstOrDefault(r =>
+                string.Equals(r.Text, userData.RoleName, StringComparison.OrdinalIgnoreCase))?.Value;
+
+            var model = new UserEditViewModel
+            {
+                UserId = userData.UserId,
+                Name = userData.Name,
+                Email = userData.Email,
+                Password = "********",
+                RoleId = int.TryParse(selectedRole, out int rid) ? rid : 0,
+                Roles = allRoles,
+                IsActive = userData.IsActive
+            };
+
+            return View(model);
         }
 
         [HttpPost]
@@ -137,6 +154,10 @@ namespace WebArsip.Mvc.Controllers
             }
 
             var client = CreateClient();
+
+            // Hapus password dummy agar tidak terkirim
+            model.Password = null;
+
             var response = await client.PutAsJsonAsync($"user/{model.UserId}", model);
 
             if (!response.IsSuccessStatusCode)
@@ -146,7 +167,7 @@ namespace WebArsip.Mvc.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "User berhasil diperbarui!";
+            TempData["Success"] = "Perubahan berhasil disimpan!";
             return RedirectToAction(nameof(Index));
         }
 

@@ -76,6 +76,9 @@ namespace WebArsip.Mvc.Controllers
                 model.OriginalFileName = FileUpload.FileName;
             }
 
+            model.Status ??= "Published";
+            model.Version = 1;
+
             var client = CreateClient();
             var response = await client.PostAsJsonAsync("document", model);
 
@@ -133,6 +136,7 @@ namespace WebArsip.Mvc.Controllers
                 oldDoc = JsonConvert.DeserializeObject<DocumentViewModel>(oldData);
             }
 
+            // 🔹 File Handling
             if (FileUpload != null && FileUpload.Length > 0)
             {
                 var ext = Path.GetExtension(FileUpload.FileName).ToLowerInvariant();
@@ -164,6 +168,27 @@ namespace WebArsip.Mvc.Controllers
                 model.OriginalFileName = oldDoc.OriginalFileName;
             }
 
+            // 🔹 Sinkronkan status dan versi
+            if (oldDoc != null)
+            {
+                if (oldDoc.Status == "Published" && model.Status == "Published")
+                {
+                    // kalau user tetap pilih Published padahal udah published → anggap revisi
+                    model.Status = "Updated";
+                    model.Version = oldDoc.Version + 1;
+                }
+                else if (oldDoc.Status == "Updated" && model.Status == "Published")
+                {
+                    // kalau user publish lagi setelah updated → tetap updated tapi naik versi
+                    model.Status = "Updated";
+                    model.Version = oldDoc.Version + 1;
+                }
+                else
+                {
+                    model.Version = oldDoc.Version;
+                }
+            }
+
             var response = await client.PutAsJsonAsync($"document/{model.DocId}", model);
             if (!response.IsSuccessStatusCode)
             {
@@ -171,7 +196,7 @@ namespace WebArsip.Mvc.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = "Dokumen berhasil diperbarui!";
+            TempData["Success"] = $"Dokumen berhasil diperbarui ke versi v{model.Version}!";
             return RedirectToAction(nameof(Index));
         }
 
@@ -208,24 +233,23 @@ namespace WebArsip.Mvc.Controllers
             return File(stream, contentType, fileName);
         }
 
-        // 🔹 Preview (tampilkan langsung)
+        // 🔹 Preview
         [HttpGet]
         public async Task<IActionResult> Preview(int id)
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"document/stream/{id}");
+            var response = await client.GetAsync($"document/preview/{id}");
             if (!response.IsSuccessStatusCode) return NotFound();
 
             var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
             var stream = await response.Content.ReadAsStreamAsync();
             var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/pdf";
 
-            // 🔹 tampilkan langsung di iframe
-            Response.Headers.Add("Content-Disposition", $"inline; filename=\"{fileName}\"");
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{fileName}\"";
             return File(stream, contentType);
         }
 
-        // 🔹 Model pagination helper
+        // 🔹 Pagination Helper
         public class PagedResult<T>
         {
             public int Page { get; set; }

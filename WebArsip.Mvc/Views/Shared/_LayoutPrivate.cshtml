@@ -1,4 +1,5 @@
 ﻿@using WebArsip.Mvc.Helpers
+@inject IConfiguration Configuration
 @{
     var email = UserRoleHelper.GetUserEmail(Context) ?? "Unknown";
     var menus = SidebarHelper.GetAccessibleMenus(Context);
@@ -21,6 +22,7 @@
     @*<!-- 🔹 SweetAlert2 CSS (opsional tapi bagus untuk style konsisten) -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4/bootstrap-4.min.css" />*@
+          
 </head>
 <body>
     <div id="wrapper">
@@ -55,29 +57,22 @@
         </div>
     </div>
 
-    <!-- ================== JAVASCRIPT ================== -->
-    <!-- ✅ jQuery harus di-load lebih dulu -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-
-    <!-- ✅ Bootstrap -->
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- ✅ DataTables (urutan penting: jQuery dulu baru ini) -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-    <!-- ✅ SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- ✅ Sidebar toggle -->
     <script>
         $("#menu-toggle").click(function (e) {
             e.preventDefault();
             $("#wrapper").toggleClass("toggled");
         });
     </script>
-
-    <!-- ✅ Tempat script tambahan tiap halaman -->
+    <script>
+        window.API_BASE_URL = '@(Configuration["ApiSettings:BaseUrl"])';
+        window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

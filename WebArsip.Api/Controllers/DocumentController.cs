@@ -49,11 +49,11 @@ namespace WebArsip.Api.Controllers
             return Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         }
 
+        // ✅ Get All
         [HttpGet]
         public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-
             IQueryable<Document> docsQuery = _context.Documents;
 
             if (!roles.Contains("Admin"))
@@ -90,13 +90,15 @@ namespace WebArsip.Api.Controllers
                     OriginalFileName = d.OriginalFileName,
                     CreatedDate = d.CreatedDate,
                     UpdatedAt = d.UpdatedAt,
-                    Status = d.Status
+                    Status = d.Status,
+                    Version = d.Version
                 }).ToList()
             };
 
             return Ok(result);
         }
 
+        // ✅ Get by ID
         [HttpGet("{id}")]
         public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
         {
@@ -112,10 +114,12 @@ namespace WebArsip.Api.Controllers
                 OriginalFileName = doc.OriginalFileName,
                 CreatedDate = doc.CreatedDate,
                 UpdatedAt = doc.UpdatedAt,
-                Status = doc.Status
+                Status = doc.Status,
+                Version = doc.Version
             };
         }
 
+        // ✅ Create
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
         {
@@ -130,7 +134,8 @@ namespace WebArsip.Api.Controllers
                 FilePath = dto.FilePath,
                 OriginalFileName = dto.OriginalFileName,
                 CreatedDate = wibNow,
-                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Draft" : dto.Status
+                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Draft" : dto.Status,
+                Version = 1
             };
 
             _context.Documents.Add(doc);
@@ -145,10 +150,12 @@ namespace WebArsip.Api.Controllers
                 FilePath = doc.FilePath,
                 OriginalFileName = doc.OriginalFileName,
                 CreatedDate = doc.CreatedDate,
-                Status = doc.Status
+                Status = doc.Status,
+                Version = doc.Version
             });
         }
 
+        // ✅ Update (dengan perbaikan versi & status)
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
@@ -162,20 +169,51 @@ namespace WebArsip.Api.Controllers
 
             doc.Title = dto.Title;
             doc.Description = dto.Description;
-            doc.FilePath = dto.FilePath;
-            doc.OriginalFileName = dto.OriginalFileName;
             doc.UpdatedAt = wibNow;
 
-            if (doc.Status == "Published")
+            // 🔧 File handling
+            if (!string.IsNullOrEmpty(dto.FilePath))
+            {
+                doc.FilePath = dto.FilePath;
+                doc.OriginalFileName = dto.OriginalFileName;
+            }
+
+            // 🔥 Perbaikan logika versioning
+            if (doc.Status == "Published" && dto.Status == "Published")
+            {
+                // Jangan turunkan versi, tetap "Updated"
                 doc.Status = "Updated";
-            else if (!string.IsNullOrEmpty(dto.Status))
-                doc.Status = dto.Status;
+                doc.Version += 1;
+            }
+            else if (doc.Status == "Updated" && dto.Status == "Published")
+            {
+                // Kalau user coba publish ulang, tetap anggap revisi
+                doc.Status = "Updated";
+                doc.Version += 1;
+            }
+            else if (doc.Status == "Updated" && dto.Status == "Updated")
+            {
+                doc.Version += 1;
+            }
+            else if (string.IsNullOrWhiteSpace(doc.Status))
+            {
+                // Kalau belum punya status, set Published
+                doc.Status = "Published";
+                doc.Version = 1;
+            }
+            else
+            {
+                // Untuk status lain (Draft, Rejected, dsb.)
+                doc.Status = dto.Status ?? doc.Status;
+            }
 
             await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui: {doc.Title}");
+            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui ke versi v{doc.Version}");
+
             return NoContent();
         }
 
+        // ✅ Delete
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
@@ -191,6 +229,7 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
+        // ✅ Stream File (Download)
         [AllowAnonymous]
         [HttpGet("stream/{id}")]
         public async Task<IActionResult> StreamFile(int id)
@@ -209,12 +248,11 @@ namespace WebArsip.Api.Controllers
                 return NotFound("File not found on server.");
 
             var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            var mimeType = "application/octet-stream";
-
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
-            return File(stream, mimeType, doc.OriginalFileName ?? Path.GetFileName(filePath));
+            return File(stream, "application/octet-stream", doc.OriginalFileName ?? Path.GetFileName(filePath));
         }
 
+        // ✅ Preview File (Inline)
         [AllowAnonymous]
         [HttpGet("preview/{id}")]
         public async Task<IActionResult> PreviewFile(int id)
@@ -247,7 +285,6 @@ namespace WebArsip.Api.Controllers
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
             Response.Headers["Expires"] = "0";
-            // ⚠️ Penting: gunakan inline agar tampil, bukan download
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{doc.OriginalFileName}\"";
 
             return new FileStreamResult(stream, mimeType);

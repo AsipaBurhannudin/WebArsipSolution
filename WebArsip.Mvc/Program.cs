@@ -7,11 +7,11 @@ using WebArsip.Mvc.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔹 Database context
+// 🔹 DB Context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 🔹 MVC + NewtonsoftJson
+// 🔹 MVC
 builder.Services.AddControllersWithViews()
     .AddNewtonsoftJson(options =>
     {
@@ -27,30 +27,37 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromHours(2);
 });
 
-// 🔹 Authentication (Cookie)
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
+// 🔹 Authentication & Authorization
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
         options.AccessDeniedPath = "/Error/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
     });
 
-// 🔹 HttpClient (API)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
+
+// ✅ HttpClient dengan handler JWT otomatis
+builder.Services.AddTransient<JwtAuthorizationHandler>();
 builder.Services.AddHttpClient("WebArsipApi", client =>
 {
     var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"];
     client.BaseAddress = new Uri(apiBaseUrl!);
     client.DefaultRequestHeaders.Accept.Add(
         new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-});
+}).AddHttpMessageHandler<JwtAuthorizationHandler>();
 
-builder.Services.AddTransient<JwtAuthorizationHandler>();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// 🔹 Middleware pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error/500");
@@ -59,20 +66,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
-// ✅ Session aktif duluan
 app.UseSession();
-
-// ✅ Authentication & Authorization sebelum middleware custom
 app.UseAuthentication();
 app.UseAuthorization();
-
-// ✅ Custom middleware role-check
 app.UseMiddleware<RoleAccessMiddleware>();
 
-// 🔹 Routing default
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Auth}/{action=Login}/{id?}");

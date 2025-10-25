@@ -9,6 +9,7 @@
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string Status { get; set; } = "Active";
+        public int Version { get; set; }
         public string? OriginalFileName { get; set; }
     }
 }

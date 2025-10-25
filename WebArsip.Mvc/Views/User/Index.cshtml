@@ -56,13 +56,14 @@
                      .each((cell, i) => cell.innerHTML = i + 1);
             }).draw();
 
-            $(".delete-btn").click(function () {
-                var id = $(this).data("id");
-                var name = $(this).data("name");
+                    // ✅ Delegated event listener untuk tombol delete (berfungsi di semua halaman)
+            $('#userTable tbody').on('click', '.delete-btn', function () {
+                const id = $(this).data("id");
+                const name = $(this).data("name");
 
                 Swal.fire({
                     title: "Yakin hapus?",
-                    text: "User \"" + name + "\" akan dihapus permanen!",
+                    text: `User "${name}" akan dihapus permanen!`,
                     icon: "warning",
                     showCancelButton: true,
                     confirmButtonColor: "#d33",

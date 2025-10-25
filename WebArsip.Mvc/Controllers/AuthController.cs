@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
@@ -23,55 +23,85 @@ namespace WebArsip.Mvc.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
-            if (!ModelState.IsValid) return View(model);
-
-            var client = _clientFactory.CreateClient("WebArsipApi");
-            var response = await client.PostAsJsonAsync("auth/login", model);
-
-            if (!response.IsSuccessStatusCode)
+            if (!ModelState.IsValid)
             {
-                TempData["ErrorMessage"] = "Login gagal, periksa email/password.";
-                return View(model);
+                return Json(new { success = false, message = "Input tidak valid." });
             }
 
-            var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-            if (result?.Token == null)
+            try
             {
-                TempData["ErrorMessage"] = "Token tidak valid.";
-                return View(model);
+                var client = _clientFactory.CreateClient("WebArsipApi");
+                var response = await client.PostAsJsonAsync("auth/login", new
+                {
+                    Email = model.Email,
+                    Password = model.Password
+                });
+
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Baca pesan error dari API
+                    string message = "Login gagal. Periksa email atau password Anda.";
+                    try
+                    {
+                        var errorObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+                        if (errorObj != null && errorObj.ContainsKey("message"))
+                            message = errorObj["message"]?.ToString() ?? message;
+                    }
+                    catch { }
+
+                    return Json(new { success = false, message });
+                }
+
+                // Deserialize respons API
+                var json = System.Text.Json.JsonDocument.Parse(body);
+                var data = json.RootElement.GetProperty("data");
+
+                var token = data.GetProperty("token").GetString();
+                var roleName = data.GetProperty("roleName").GetString() ?? "";
+                var email = data.GetProperty("email").GetString() ?? "";
+                var roleId = data.TryGetProperty("roleId", out var rId) ? rId.GetInt32() : 0;
+
+                if (string.IsNullOrEmpty(token))
+                    return Json(new { success = false, message = "Token tidak valid." });
+
+                // ✅ Simpan ke Session
+                HttpContext.Session.SetString("JWToken", token);
+                HttpContext.Session.SetString("UserRole", roleName);
+                HttpContext.Session.SetString("UserEmail", email);
+                HttpContext.Session.SetString("RoleId", roleId.ToString());
+
+                // ✅ Buat ClaimsPrincipal untuk Cookie Authentication
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, email),
+                    new Claim(ClaimTypes.Role, roleName),
+                    new Claim("JwtToken", token)
+                };
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
+                {
+                    IsPersistent = true,
+                    ExpiresUtc = DateTime.UtcNow.AddHours(2)
+                });
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Login berhasil!",
+                    redirectUrl = Url.Action("Index", "Dashboard")
+                });
             }
-
-            // 🔹 Simpan ke Session
-            HttpContext.Session.SetString("RoleId", result.RoleId.ToString());
-            HttpContext.Session.SetString("UserRole", result.RoleName?.Trim() ?? "");
-            HttpContext.Session.SetString("JWToken", result.Token);
-            HttpContext.Session.SetString("UserEmail", model.Email);
-
-            // 🔹 Buat ClaimsPrincipal untuk Cookie Authentication
-            var claims = new List<Claim>
+            catch (Exception ex)
             {
-                new Claim(ClaimTypes.Name, model.Email),
-                new Claim(ClaimTypes.Role, result.RoleName ?? ""), // penting!
-                new Claim("JwtToken", result.Token)
-            };
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTime.UtcNow.AddHours(2)
-            });
-
-            // 🔹 Redirect
-            if (!string.IsNullOrEmpty(returnUrl))
-                return Redirect(returnUrl);
-
-            TempData["SuccessMessage"] = "Login berhasil, selamat datang!";
-            return RedirectToAction("Index", "Dashboard");
+                return Json(new { success = false, message = $"Terjadi kesalahan: {ex.Message}" });
+            }
         }
 
         [HttpPost]

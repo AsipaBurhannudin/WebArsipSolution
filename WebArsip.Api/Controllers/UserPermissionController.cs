@@ -22,7 +22,6 @@ namespace WebArsip.Api.Controllers
             _auditLogService = auditLogService;
         }
 
-        // 📌 GET: api/UserPermission?page=1&pageSize=20
         [HttpGet]
         public async Task<ActionResult<PagedResult<UserPermissionReadDto>>> GetAll([FromQuery] BaseQueryDto query)
         {
@@ -61,7 +60,6 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 📌 GET: api/UserPermission/5
         [HttpGet("{id}")]
         public async Task<ActionResult<UserPermissionReadDto>> Get(int id)
         {
@@ -87,7 +85,6 @@ namespace WebArsip.Api.Controllers
             };
         }
 
-        // 📌 POST: api/UserPermission
         [HttpPost]
         public async Task<ActionResult<UserPermissionReadDto>> Create(UserPermissionCreateDto dto)
         {
@@ -119,7 +116,6 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 📌 PUT: api/UserPermission/5
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UserPermissionCreateDto dto)
         {
@@ -141,7 +137,6 @@ namespace WebArsip.Api.Controllers
             return NoContent();
         }
 
-        // 📌 DELETE: api/UserPermission/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

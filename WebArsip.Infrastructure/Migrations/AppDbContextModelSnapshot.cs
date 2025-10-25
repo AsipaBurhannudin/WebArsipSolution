@@ -214,6 +214,9 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
                     b.HasKey("DocId");
 
                     b.ToTable("Documents");
@@ -353,6 +356,9 @@ namespace WebArsip.Infrastructure.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LockoutEnabled")
