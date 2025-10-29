@@ -1,0 +1,31 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard User";
+    Layout = "_LayoutPrivate";
+}
+
+<div class="user-dashboard-wrapper container-fluid">
+    <section class="welcome-section mb-4">
+        <h2>📈 Dashboard Anda</h2>
+        <p>Selamat datang kembali! Berikut aktivitas dan dokumen Anda minggu ini.</p>
+    </section>
+
+    <div class="row mt-4">
+        <div class="col-md-6"><div class="card bg-primary text-white p-3">Documents: @Model.DocumentCount</div></div>
+        <div class="col-md-6"><div class="card bg-success text-white p-3">Aktivitas Log: @Model.AuditLogCount</div></div>
+    </div>
+
+    <section class="chart-section mt-5">
+        <h4 class="text-center mb-3">📊 Aktivitas 7 Hari Terakhir</h4>
+        <canvas id="userActivityChart" height="100"></canvas>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/dashboard/dashboard-user.js"></script>
+}

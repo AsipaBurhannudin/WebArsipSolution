@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
 
@@ -41,6 +42,14 @@ namespace WebArsip.Api.Controllers
                 RoleId = role.Id,
                 RoleName = role.Name
             };
+        }
+
+        [HttpGet("count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<int>> GetRoleCount()
+        {
+            var count = await _roleManager.Roles.CountAsync();
+            return Ok(count);
         }
 
         [HttpPost]

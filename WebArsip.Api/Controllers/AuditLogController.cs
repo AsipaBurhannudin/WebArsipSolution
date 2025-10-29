@@ -156,6 +156,59 @@ namespace WebArsip.Api.Controllers
             return Ok(count);
         }
 
+        [AllowAnonymous]
+        [HttpGet("user-activity")]
+        public async Task<IActionResult> GetUserActivity([FromQuery] string? email, [FromQuery] int days = 7)
+        {
+            var role = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Role)?.Value ?? "User";
+            var startDate = DateTime.UtcNow.AddDays(-days);
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+
+            var query = _context.AuditLogs
+                .Where(l => l.Timestamp >= startDate)
+                .AsQueryable();
+
+            if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                // User biasa hanya bisa lihat aktivitas dirinya
+                var userEmail = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.Email)?.Value;
+                if (string.IsNullOrEmpty(userEmail))
+                    return Forbid();
+
+                var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+                if (userEntity == null)
+                    return NotFound("User tidak ditemukan");
+
+                query = query.Where(l => l.UserId == userEntity.Id.ToString());
+            }
+            else if (!string.IsNullOrEmpty(email))
+            {
+                // Admin bisa filter berdasarkan email user tertentu
+                var userEntity = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (userEntity != null)
+                    query = query.Where(l => l.UserId == userEntity.Id.ToString());
+            }
+
+            var logs = await query.ToListAsync();
+
+            var stats = logs
+                .GroupBy(l => new
+                {
+                    Date = TimeZoneInfo.ConvertTimeFromUtc(l.Timestamp, tz).Date,
+                    l.Action
+                })
+                .Select(g => new
+                {
+                    Date = g.Key.Date.ToString("yyyy-MM-dd"),
+                    Action = g.Key.Action,
+                    Count = g.Count()
+                })
+                .OrderBy(s => s.Date)
+                .ToList();
+
+            return Ok(stats);
+        }
+
         /*[HttpGet("export/excel")]
         public async Task<IActionResult> ExportAuditLogsExcel([FromQuery] int limit = 1000)
         {

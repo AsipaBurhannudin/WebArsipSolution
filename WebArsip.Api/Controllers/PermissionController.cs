@@ -42,6 +42,14 @@ namespace WebArsip.Api.Controllers
             }).ToList();
         }
 
+        [HttpGet("count")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<int>> GetPermissionCount()
+        {
+            var count = await _context.Permissions.CountAsync();
+            return Ok(count);
+        }
+
         [HttpPost]
         public async Task<ActionResult<PermissionReadDto>> CreatePermission(PermissionCreateDto dto)
         {

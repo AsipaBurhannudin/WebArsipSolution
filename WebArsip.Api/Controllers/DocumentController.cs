@@ -119,6 +119,14 @@ namespace WebArsip.Api.Controllers
             };
         }
 
+        [HttpGet("count")]
+        [Authorize]
+        public async Task<ActionResult<int>> GetDocumentCount()
+        {
+            var count = await _context.Documents.CountAsync();
+            return Ok(count);
+        }
+
         // ✅ Create
         [HttpPost]
         public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
