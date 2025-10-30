@@ -25,6 +25,7 @@ namespace WebArsip.Mvc.Helpers
                     ("User", "👤 Users", "User"),
                     ("Role", "🔑 Roles", "Role"),
                     ("Permission", "⚙ Permissions", "Permission"),
+                    ("UserPermission", "📜 User Permission", "UserPermission"),
                     ("AuditLog", "📜 Audit Logs", "AuditLog")
                 };
             }

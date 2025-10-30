@@ -1,4 +1,4 @@
-/* === GLOBAL RESET === */
+/* === GLOBAL === */
 body {
     background: linear-gradient(135deg, #6a85f1, #7e5ce3);
     min-height: 100vh;
@@ -7,7 +7,7 @@ body {
     overflow-x: hidden;
 }
 
-/* === SIDEBAR (Glassmorphism style) === */
+/* === SIDEBAR === */
 #sidebar-wrapper {
     width: 250px;
     height: 100vh;
@@ -18,39 +18,37 @@ body {
     background: rgba(17, 25, 40, 0.55);
     border-right: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 6px 0 25px rgba(0, 0, 0, 0.25);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.4s ease, opacity 0.3s ease;
     z-index: 1020;
 }
 
 #wrapper.toggled #sidebar-wrapper {
     transform: translateX(-270px);
-    opacity: 0.9;
 }
 
-/* Sidebar Heading */
+/* Sidebar text & items */
 #sidebar-wrapper .sidebar-heading {
     font-weight: 600;
-    color: #ffffff;
-    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.2);
+    color: #fff;
     padding: 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.25);
 }
 
-/* Sidebar Menu Items */
 #sidebar-wrapper .list-group-item {
     border: none;
     background: transparent;
     color: #dbe0ff;
     padding: 0.9rem 1.2rem;
-    transition: all 0.25s ease;
-    border-radius: 8px;
     margin: 4px 8px;
+    border-radius: 8px;
+    transition: all 0.25s ease;
 }
 
     #sidebar-wrapper .list-group-item:hover {
         background: rgba(255, 255, 255, 0.12);
+        color: #fff;
         transform: translateX(5px);
-        color: #ffffff;
     }
 
     #sidebar-wrapper .list-group-item.active {
@@ -59,25 +57,18 @@ body {
         box-shadow: 0 0 10px rgba(122, 143, 255, 0.5);
     }
 
-/* === NAVBAR (Glassmorphism top bar) === */
+/* === NAVBAR === */
 .navbar {
     backdrop-filter: blur(16px) saturate(180%);
-    background: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.12);
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
-    color: #fff;
-    position: sticky;
-    top: 0;
-    z-index: 1050;
     transition: background 0.3s ease;
+    color: #fff;
+    z-index: 1050;
 }
 
-    .navbar .navbar-text strong {
-        color: #e6e9ff;
-        font-weight: 500;
-    }
-
-/* === TOGGLE BUTTON (☰ / ✕ Morph) === */
+/* === TOGGLE BUTTON === */
 #menu-toggle {
     border: none;
     background: rgba(255, 255, 255, 0.15);
@@ -87,12 +78,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    transition: all 0.35s ease;
     cursor: pointer;
+    transition: all 0.35s ease;
     position: relative;
     z-index: 1100;
-    margin-right: 10px;
 }
 
     #menu-toggle:hover {
@@ -100,7 +89,7 @@ body {
         transform: scale(1.05);
     }
 
-    /* Morph animation (3 bars to X) */
+    /* ☰ morph ✕ */
     #menu-toggle .toggle-icon,
     #menu-toggle .toggle-icon::before,
     #menu-toggle .toggle-icon::after {
@@ -136,49 +125,33 @@ body {
             top: 0;
         }
 
-/* Saat sidebar tertutup, tombol tetap di posisi sejajar navbar */
-#wrapper.toggled #menu-toggle {
-    position: fixed;
-    top: 14px;
-    left: 18px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Navbar text jarak aman */
-.navbar h2, .navbar h4, .navbar .navbar-text {
-    margin-left: 10px;
-    color: #e0e4ff;
-}
-
 /* === PAGE CONTENT === */
 #page-content-wrapper {
     margin-left: 250px;
-    transition: margin-left 0.4s ease, opacity 0.4s ease;
+    transition: margin-left 0.4s ease, opacity 0.4s ease, transform 0.4s ease;
     padding-bottom: 50px;
+    opacity: 1;
 }
 
 #wrapper.toggled #page-content-wrapper {
     margin-left: 0;
+    opacity: 0.95;
+    transform: translateX(10px);
 }
 
 /* === PROFILE DROPDOWN === */
-.profile-dropdown {
-    position: relative;
+.profile-dropdown img {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: transform 0.3s ease;
 }
 
-    .profile-dropdown img {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.6);
-        cursor: pointer;
-        transition: transform 0.3s ease;
+    .profile-dropdown img:hover {
+        transform: scale(1.05);
     }
-
-        .profile-dropdown img:hover {
-            transform: scale(1.05);
-        }
 
 .profile-menu {
     position: absolute;
@@ -190,7 +163,7 @@ body {
     overflow: hidden;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
     display: none;
-    min-width: 170px;
+    min-width: 180px;
 }
 
     .profile-menu.show {
@@ -202,20 +175,20 @@ body {
         display: block;
         width: 100%;
         color: #e0e4ff;
-        text-align: left;
         background: none;
         border: none;
         padding: 10px 15px;
         text-decoration: none;
         transition: all 0.25s;
+        text-align: left;
     }
 
         .profile-menu a:hover, .profile-menu button:hover {
             background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            color: #fff;
         }
 
-/* === ANIMATION === */
+/* === ANIMATIONS === */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -226,6 +199,10 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.dashboard-wrapper {
+    animation: fadeIn 0.5s ease-in-out;
 }
 
 /* === RESPONSIVE === */

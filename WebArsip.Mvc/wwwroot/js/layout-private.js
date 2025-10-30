@@ -1,32 +1,21 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
     const wrapper = document.getElementById("wrapper");
     const toggleBtn = document.getElementById("menu-toggle");
+    const sidebar = document.getElementById("sidebar-wrapper");
+    const content = document.getElementById("page-content-wrapper");
     const profileIcon = document.getElementById("profile-icon");
     const profileMenu = document.getElementById("profile-menu");
 
-    // === Sidebar Toggle (Morph + Smooth Transition) ===
+    // Sidebar toggle + icon morph
     toggleBtn.addEventListener("click", () => {
         wrapper.classList.toggle("toggled");
         toggleBtn.classList.toggle("active");
-
-        const sidebar = document.getElementById("sidebar-wrapper");
         sidebar.style.transition = "all 0.4s ease";
-
-        // Optional smooth opacity fade for content
-        const content = document.getElementById("page-content-wrapper");
-        content.style.opacity = wrapper.classList.contains("toggled") ? "0.95" : "1";
+        content.classList.add("content-anim");
+        setTimeout(() => content.classList.remove("content-anim"), 400);
     });
 
-    // === Highlight Active Sidebar Menu ===
-    const currentUrl = window.location.pathname.toLowerCase();
-    document.querySelectorAll("#sidebar-wrapper a").forEach(link => {
-        const href = link.getAttribute("href")?.toLowerCase();
-        if (href && currentUrl.includes(href)) {
-            link.classList.add("active");
-        }
-    });
-
-    // === Profile Dropdown Toggle ===
+    // Profile dropdown
     if (profileIcon && profileMenu) {
         profileIcon.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -40,7 +29,16 @@
         });
     }
 
-    // === Responsive Reset (auto close sidebar on resize) ===
+    // Active link highlight
+    const currentUrl = window.location.pathname.toLowerCase();
+    document.querySelectorAll("#sidebar-wrapper a").forEach(link => {
+        const href = link.getAttribute("href")?.toLowerCase();
+        if (href && currentUrl.includes(href)) {
+            link.classList.add("active");
+        }
+    });
+
+    // Responsive reset
     window.addEventListener("resize", () => {
         if (window.innerWidth > 992 && wrapper.classList.contains("toggled")) {
             wrapper.classList.remove("toggled");

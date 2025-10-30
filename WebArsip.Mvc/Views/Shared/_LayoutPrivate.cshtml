@@ -12,19 +12,18 @@
     <title>@ViewData["Title"] - WebArsip</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- CSS Core -->
+    <!-- Core CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/layout-private.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
     <script src="https://kit.fontawesome.com/a2e0ef5b12.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div id="wrapper" class="d-flex">
         <!-- 🔹 SIDEBAR -->
-        <nav id="sidebar-wrapper" class="bg-dark text-white">
-            <div class="sidebar-heading text-center py-3 border-bottom">
+        <nav id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-3">
                 📂 <strong>WebArsip JLM</strong>
             </div>
 
@@ -33,7 +32,7 @@
                 {
                     var isActive = ViewContext.RouteData.Values["controller"]?.ToString() == menu.Controller ? "active" : "";
                     <a asp-controller="@menu.Controller" asp-action="Index"
-                       class="list-group-item list-group-item-action bg-dark text-white @isActive">
+                       class="list-group-item list-group-item-action @isActive">
                         @menu.Label
                     </a>
                 }
@@ -43,87 +42,45 @@
         <!-- 🔹 MAIN CONTENT -->
         <div id="page-content-wrapper" class="flex-fill">
             <!-- 🔸 NAVBAR -->
-            <nav class="navbar navbar-expand-lg navbar-dark navbar-custom border-bottom px-3 sticky-top">
+            <nav class="navbar navbar-expand-lg navbar-dark">
                 <div class="d-flex align-items-center">
-                    <!-- Toggle Icon (morphs between ☰ and ✕) -->
-                    <button id="menu-toggle" class="btn p-0 me-3" type="button">
-                        <i id="toggleIcon" class="bi bi-list fs-3 text-white"></i>
+                    <!-- Toggle Icon (morph ☰ / ✕) -->
+                    <button id="menu-toggle" type="button">
+                        <span class="toggle-icon"></span>
                     </button>
-                    <span class="navbar-brand fw-semibold mb-0 h5">Dashboard</span>
+                    <span class="navbar-brand fw-semibold ms-2">Dashboard</span>
                 </div>
 
                 <!-- Profile Dropdown -->
                 <div class="ms-auto d-flex align-items-center">
-                    <div class="profile-dropdown position-relative">
+                    <div class="profile-dropdown position-relative me-2">
                         <img id="profile-icon" src="~/images/avatar-default.png" alt="Profile" />
                         <div id="profile-menu" class="profile-menu">
-                            <a class="dropdown-item" href="#">
-                                <i class="fas fa-user-circle me-2 text-primary"></i> Profil
-                            </a>
-                            <a class="dropdown-item" href="#">
-                                <i class="fas fa-cog me-2 text-warning"></i> Pengaturan
-                            </a>
+                            <a href="#"><i class="fas fa-user-circle me-2 text-primary"></i> Profil</a>
+                            <a href="#"><i class="fas fa-cog me-2 text-warning"></i> Pengaturan</a>
                             <hr class="dropdown-divider" />
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
-                                <button type="submit" class="dropdown-item text-danger">
-                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                </button>
+                                <button type="submit"><i class="fas fa-sign-out-alt me-2 text-danger"></i> Logout</button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Email text -->
-                    <span class="navbar-text ms-3"><strong>@email</strong></span>
                 </div>
             </nav>
 
             <!-- 🔸 CONTENT -->
-            <main class="container-fluid mt-4 mb-5">
+            <main class="container-fluid mt-4 mb-5 dashboard-wrapper">
                 @RenderBody()
             </main>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- JS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         window.API_BASE_URL = '@(Configuration["ApiSettings:BaseUrl"])';
         window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
-    </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const wrapper = document.getElementById("wrapper");
-            const toggleBtn = document.getElementById("menu-toggle");
-            const toggleIcon = document.getElementById("toggleIcon");
-
-            // Sidebar toggle (morph icon)
-            toggleBtn.addEventListener("click", () => {
-                wrapper.classList.toggle("toggled");
-                toggleIcon.classList.toggle("bi-list");
-                toggleIcon.classList.toggle("bi-x-lg");
-            });
-
-            // Profile dropdown toggle
-            const profileIcon = document.getElementById("profile-icon");
-            const profileMenu = document.getElementById("profile-menu");
-
-            profileIcon.addEventListener("click", (e) => {
-                e.stopPropagation();
-                profileMenu.classList.toggle("show");
-            });
-
-            document.addEventListener("click", (e) => {
-                if (!profileMenu.contains(e.target) && e.target !== profileIcon) {
-                    profileMenu.classList.remove("show");
-                }
-            });
-        });
     </script>
 
     <script src="~/js/layout-private.js"></script>
