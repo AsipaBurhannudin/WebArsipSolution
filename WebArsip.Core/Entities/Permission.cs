@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebArsip.Core.Entities
 {
@@ -12,7 +6,6 @@ namespace WebArsip.Core.Entities
     {
         public int PermissionId { get; set; }
         public int RoleId { get; set; }
-        public int DocId { get; set; }
 
         public bool CanView { get; set; }
         public bool CanEdit { get; set; }
@@ -22,10 +15,8 @@ namespace WebArsip.Core.Entities
 
         // Relasi
         public Role Role { get; set; } = null!;
-        [ForeignKey("DocId")]
-        public Document Document { get; set; } = null!;
-
     }
+
     public static class Features
     {
         public const string DocumentView = "Document.View";

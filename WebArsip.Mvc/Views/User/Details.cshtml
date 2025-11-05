@@ -1,15 +1,17 @@
 ﻿@model WebArsip.Mvc.Models.ViewModels.UserViewModel
-
 @{
     ViewData["Title"] = "User Details";
     Layout = "_LayoutPrivate";
 }
 
-<div class="container mt-4">
-    <h2>🔍 User Details</h2>
+<link rel="stylesheet" href="~/css/user/form.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
 
-    <div class="card shadow-sm p-4">
-        <dl class="row">
+<div class="container mt-5 mb-5">
+    <div class="card glass-card shadow-lg border-0 p-4">
+        <h3 class="fw-semibold text-gradient mb-4"><i class="bi bi-person-vcard"></i> User Details</h3>
+
+        <dl class="row text-light">
             <dt class="col-sm-3">ID</dt>
             <dd class="col-sm-9">@Model.UserId</dd>
 
@@ -25,16 +27,16 @@
             <dt class="col-sm-3">Status</dt>
             <dd class="col-sm-9">@(Model.IsActive ? "Active ✅" : "Inactive ❌")</dd>
         </dl>
-    </div>
 
-    <div class="mt-3">
-        <a asp-action="Index" class="btn btn-secondary">⬅ Back to List</a>
-        <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-warning">✏ Edit</a>
-        <form id="deleteForm" data-id="@Model.UserId" style="display:inline;">
-            <button type="button" class="btn btn-danger" id="deleteBtn">
-                🗑 Delete
+        <div class="d-flex gap-2 mt-4">
+            <a asp-action="Index" class="btn btn-secondary rounded-pill px-4">⬅ Back</a>
+            <a asp-action="Edit" asp-route-id="@Model.UserId" class="btn btn-warning text-white rounded-pill px-4">
+                <i class="bi bi-pencil"></i> Edit
+            </a>
+            <button type="button" class="btn btn-danger rounded-pill px-4" id="deleteBtn" data-id="@Model.UserId">
+                <i class="bi bi-trash"></i> Delete
             </button>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -42,33 +44,28 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.getElementById("deleteBtn").addEventListener("click", () => {
-            const userId = document.getElementById("deleteForm").dataset.id;
+            const userId = document.getElementById("deleteBtn").dataset.id;
             Swal.fire({
                 title: "Yakin ingin menghapus?",
                 text: "User ini akan dihapus permanen!",
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonColor: "#d33",
-                cancelButtonColor: "#3085d6",
-                confirmButtonText: "Ya, hapus!"
-            }).then((result) => {
+                confirmButtonText: "Ya, hapus!",
+                cancelButtonText: "Batal"
+            }).then(result => {
                 if (result.isConfirmed) {
-                    fetch(`/User/Delete/${userId}`, {
-                        method: "POST",
-                        headers: { "X-Requested-With": "XMLHttpRequest" }
-                    })
+                    fetch(`/User/Delete/${userId}`, { method: "POST" })
                         .then(res => res.json())
                         .then(data => {
                             if (data.success) {
                                 Swal.fire({
                                     icon: "success",
-                                    title: "Berhasil!",
-                                    text: data.message,
+                                    title: data.message,
                                     timer: 1500,
                                     showConfirmButton: false
                                 }).then(() => window.location.href = "/User/Index");
                             } else {
-                                Swal.fire("Gagal", data.message, "error");
+                                Swal.fire("Error", data.message, "error");
                             }
                         })
                         .catch(() => Swal.fire("Error", "Gagal menghubungi server.", "error"));

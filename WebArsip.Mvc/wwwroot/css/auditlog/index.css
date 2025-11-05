@@ -1,0 +1,89 @@
+﻿body {
+    background: linear-gradient(145deg, #0d1117, #161b22);
+    color: #e6edf3;
+    font-family: 'Poppins', sans-serif;
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Timeline structure */
+.timeline {
+    position: relative;
+    margin-left: 25px;
+    padding-left: 20px;
+    border-left: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 22px;
+}
+
+.timeline-dot {
+    position: absolute;
+    left: -11px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+/* Dot Colors */
+.dot-success {
+    background-color: #00ff95;
+    box-shadow: 0 0 8px #00ff95;
+}
+
+.dot-warning {
+    background-color: #ffc107;
+    box-shadow: 0 0 8px #ffc107;
+}
+
+.dot-danger {
+    background-color: #ff4d4d;
+    box-shadow: 0 0 8px #ff4d4d;
+}
+
+.dot-info {
+    background-color: #00c6ff;
+    box-shadow: 0 0 8px #00c6ff;
+}
+
+.dot-primary {
+    background-color: #007bff;
+    box-shadow: 0 0 8px #007bff;
+}
+
+.dot-muted {
+    background-color: #6c757d;
+    box-shadow: none;
+}
+
+.dot-default {
+    background-color: #999;
+}
+
+.glass-inner {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 12px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+    .glass-inner:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+    }

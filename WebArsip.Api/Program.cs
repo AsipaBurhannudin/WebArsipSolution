@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<PermissionService, PermissionService>();
 
 // ✅ Identity (ubah dari AddIdentityCore → AddIdentity)
 builder.Services.AddIdentity<User, Role>(options =>
@@ -148,7 +149,6 @@ using (var scope = app.Services.CreateScope())
                 context.Permissions.Add(new Permission
                 {
                     RoleId = adminRole.Id,
-                    DocId = doc.DocId,
                     CanView = true,
                     CanEdit = true,
                     CanUpload = true,

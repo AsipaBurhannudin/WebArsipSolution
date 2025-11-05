@@ -42,9 +42,6 @@ namespace WebArsip.Mvc.Helpers
 
             var query = db.Permissions.Where(p => p.RoleId == roleId);
 
-            if (docId.HasValue)
-                query = query.Where(p => p.DocId == docId);
-
             return feature switch
             {
                 "Document.View" => query.Any(p => p.CanView),

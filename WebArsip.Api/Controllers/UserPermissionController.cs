@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using WebArsip.Core.DTOs;
 using WebArsip.Core.Entities;
 using WebArsip.Infrastructure.DbContexts;
@@ -10,7 +11,7 @@ namespace WebArsip.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin")] // hanya admin yang bisa manage
     public class UserPermissionController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -22,132 +23,118 @@ namespace WebArsip.Api.Controllers
             _auditLogService = auditLogService;
         }
 
+        // 🔹 Ambil semua user permission
         [HttpGet]
-        public async Task<ActionResult<PagedResult<UserPermissionReadDto>>> GetAll([FromQuery] BaseQueryDto query)
+        public async Task<ActionResult<IEnumerable<UserPermissionReadDto>>> GetAll()
         {
-            var baseQuery = _context.UserPermissions
-                .Include(up => up.User)
+            var data = await _context.UserPermissions
                 .Include(up => up.Document)
-                .AsQueryable();
-
-            var totalCount = await baseQuery.CountAsync();
-
-            var data = await baseQuery
-                .OrderByDescending(up => up.UserPermissionId)
-                .Skip((query.Page - 1) * query.PageSize)
-                .Take(query.PageSize)
-                .Select(up => new UserPermissionReadDto
-                {
-                    UserPermissionId = up.UserPermissionId,
-                    UserId = up.UserId,
-                    UserName = up.User.Name,
-                    UserEmail = up.User.Email,
-                    DocId = up.DocId,
-                    DocumentTitle = up.Document.Title,
-                    CanView = up.CanView,
-                    CanUpload = up.CanUpload,
-                    CanEdit = up.CanEdit,
-                    CanDelete = up.CanDelete
-                })
+                .OrderBy(up => up.Id)
                 .ToListAsync();
 
-            return Ok(new PagedResult<UserPermissionReadDto>
+            return Ok(data.Select(up => new UserPermissionReadDto
             {
-                Page = query.Page,
-                PageSize = query.PageSize,
-                TotalCount = totalCount,
-                Items = data
-            });
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<UserPermissionReadDto>> Get(int id)
-        {
-            var up = await _context.UserPermissions
-                .Include(u => u.User)
-                .Include(d => d.Document)
-                .FirstOrDefaultAsync(x => x.UserPermissionId == id);
-
-            if (up == null) return NotFound();
-
-            return new UserPermissionReadDto
-            {
-                UserPermissionId = up.UserPermissionId,
-                UserId = up.UserId,
-                UserName = up.User?.Name ?? "-",
-                UserEmail = up.User?.Email ?? "-",
+                Id = up.Id,
                 DocId = up.DocId,
-                DocumentTitle = up.Document?.Title ?? "-",
+                DocTitle = up.Document?.Title ?? "(Dokumen tidak ditemukan)",
+                UserEmail = up.UserEmail,
                 CanView = up.CanView,
-                CanUpload = up.CanUpload,
                 CanEdit = up.CanEdit,
-                CanDelete = up.CanDelete
-            };
+                CanDelete = up.CanDelete,
+                CanDownload = up.CanDownload,
+                CanUpload = up.CanUpload
+            }));
         }
 
+        // 🔹 Tambah user permission
         [HttpPost]
         public async Task<ActionResult<UserPermissionReadDto>> Create(UserPermissionCreateDto dto)
         {
-            var up = new UserPermission
+            // Cek duplikat
+            var exists = await _context.UserPermissions
+                .FirstOrDefaultAsync(up => up.DocId == dto.DocId && up.UserEmail == dto.UserEmail);
+
+            if (exists != null)
             {
-                UserId = dto.UserId,
+                await _auditLogService.LogPermissionDeniedAsync(User, "CREATE", "UserPermission", dto.DocId.ToString(),
+                    $"UserPermission duplikat untuk user {dto.UserEmail}");
+                return Conflict("Permission untuk user dan dokumen ini sudah ada.");
+            }
+
+            var entity = new UserPermission
+            {
                 DocId = dto.DocId,
+                UserEmail = dto.UserEmail,
                 CanView = dto.CanView,
-                CanUpload = dto.CanUpload,
                 CanEdit = dto.CanEdit,
-                CanDelete = dto.CanDelete
+                CanDelete = dto.CanDelete,
+                CanDownload = dto.CanDownload,
+                CanUpload = dto.CanUpload
             };
 
-            _context.UserPermissions.Add(up);
+            _context.UserPermissions.Add(entity);
             await _context.SaveChangesAsync();
 
-            await _auditLogService.LogAsync(User, "CREATE", "UserPermission", up.UserPermissionId.ToString(),
-                $"UserPermission ditambahkan untuk UserId={dto.UserId}, DocumentId={dto.DocId}");
+            var doc = await _context.Documents.FindAsync(dto.DocId);
+            await _auditLogService.LogAsync(User, "CREATE", "UserPermission", entity.Id.ToString(),
+                $"Admin memberi akses ke {dto.UserEmail} untuk dokumen '{doc?.Title ?? "Unknown"}' (DocId={dto.DocId})");
 
-            return CreatedAtAction(nameof(Get), new { id = up.UserPermissionId }, new UserPermissionReadDto
+            return CreatedAtAction(nameof(GetAll), new { id = entity.Id }, new UserPermissionReadDto
             {
-                UserPermissionId = up.UserPermissionId,
-                UserId = up.UserId,
-                DocId = up.DocId,
-                CanView = up.CanView,
-                CanUpload = up.CanUpload,
-                CanEdit = up.CanEdit,
-                CanDelete = up.CanDelete
+                Id = entity.Id,
+                DocId = entity.DocId,
+                DocTitle = doc?.Title,
+                UserEmail = entity.UserEmail,
+                CanView = entity.CanView,
+                CanEdit = entity.CanEdit,
+                CanDelete = entity.CanDelete,
+                CanDownload = entity.CanDownload,
+                CanUpload = entity.CanUpload
             });
         }
 
+        // 🔹 Update user permission
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UserPermissionCreateDto dto)
         {
-            var up = await _context.UserPermissions.FindAsync(id);
-            if (up == null) return NotFound();
+            var entity = await _context.UserPermissions.FindAsync(id);
+            if (entity == null)
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "UPDATE", "UserPermission", id.ToString(), "Data tidak ditemukan");
+                return NotFound();
+            }
 
-            up.UserId = dto.UserId;
-            up.DocId = dto.DocId;
-            up.CanView = dto.CanView;
-            up.CanUpload = dto.CanUpload;
-            up.CanEdit = dto.CanEdit;
-            up.CanDelete = dto.CanDelete;
+            entity.CanView = dto.CanView;
+            entity.CanEdit = dto.CanEdit;
+            entity.CanDelete = dto.CanDelete;
+            entity.CanDownload = dto.CanDownload;
+            entity.CanUpload = dto.CanUpload;
 
             await _context.SaveChangesAsync();
 
+            var doc = await _context.Documents.FindAsync(entity.DocId);
             await _auditLogService.LogAsync(User, "UPDATE", "UserPermission", id.ToString(),
-                $"UserPermission diperbarui untuk UserId={dto.UserId}, DocumentId={dto.DocId}");
+                $"Admin memperbarui permission untuk {entity.UserEmail} pada dokumen '{doc?.Title ?? "Unknown"}' (DocId={entity.DocId})");
 
             return NoContent();
         }
 
+        // 🔹 Hapus user permission
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var up = await _context.UserPermissions.FindAsync(id);
-            if (up == null) return NotFound();
+            var entity = await _context.UserPermissions.FindAsync(id);
+            if (entity == null)
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "DELETE", "UserPermission", id.ToString(), "Data tidak ditemukan");
+                return NotFound();
+            }
 
-            _context.UserPermissions.Remove(up);
+            _context.UserPermissions.Remove(entity);
             await _context.SaveChangesAsync();
 
             await _auditLogService.LogAsync(User, "DELETE", "UserPermission", id.ToString(),
-                $"UserPermission dihapus (UserId={up.UserId}, DocumentId={up.DocId})");
+                $"Admin menghapus permission untuk user {entity.UserEmail} (DocId={entity.DocId})");
 
             return NoContent();
         }

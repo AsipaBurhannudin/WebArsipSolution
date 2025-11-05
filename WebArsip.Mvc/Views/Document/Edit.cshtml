@@ -1,162 +1,117 @@
-﻿@using WebArsip.Mvc.Models.ViewModels
-@model DocumentViewModel
+﻿@model WebArsip.Mvc.Models.ViewModels.DocumentViewModel
+
 @{
-    ViewData["Title"] = "Edit Document Page";
+    ViewData["Title"] = "✏️ Edit Document";
     Layout = "_LayoutPrivate";
 }
 
-<h2>✏️ Edit Document</h2>
+<link rel="stylesheet" href="~/css/document/form.css" />
 
-<form id="editDocForm" enctype="multipart/form-data">
-    <input type="hidden" asp-for="DocId" />
+<div class="container mt-5 mb-5 document-edit-container">
+    <div class="card glass-card shadow-lg p-4">
+        <h3 class="fw-semibold text-center text-gradient mb-4">
+            <i class="bi bi-pencil-square"></i> Edit Document
+        </h3>
 
-    <div class="mb-3">
-        <label for="Title" class="form-label">Title</label>
-        <input asp-for="Title" class="form-control" required />
-    </div>
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <input type="hidden" asp-for="DocId" />
+            <input type="hidden" asp-for="FilePath" />
+            <input type="hidden" asp-for="OriginalFileName" />
 
-    <div class="mb-3">
-        <label for="Description" class="form-label">Description</label>
-        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label for="FileUpload" class="form-label">Replace File (Optional)</label>
-        <input type="file" name="FileUpload" class="form-control" accept=".doc,.docx,.xls,.xlsx,.pdf" />
-        @if (!string.IsNullOrEmpty(Model.FilePath))
-        {
-            <p class="mt-2">
-                📄 Current File:
-                <a href="@Url.Action("Download", "Document", new { id = Model.DocId })" target="_blank">
-                    @Model.OriginalFileName
-                </a>
-            </p>
-        }
-    </div>
-
-    <div class="progress mb-3" style="height: 25px; display: none;">
-        <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated"
-             role="progressbar" style="width: 0%">
-            0%
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label for="Status" class="form-label">Status</label>
-            <select asp-for="Status" class="form-select">
-                <option value="Draft" selected="@((Model.Status == "Draft").ToString())">Draft</option>
-                <option value="Published" selected="@((Model.Status == "Published").ToString())">Published</option>
-            </select>
-        </div>
-
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Version</label>
-            @{
-                var badgeClass = Model.Status switch
-                {
-                    "Published" => "bg-success",
-                    "Updated" => "bg-warning text-dark",
-                    "Draft" => "bg-secondary",
-                    _ => "bg-info"
-                };
-            }
-            <div class="form-control d-flex align-items-center" id="versionContainer">
-                <span class="badge @badgeClass me-2 px-3 py-2" id="versionBadge" style="font-size: 0.9rem;">
-                    @($"v{Model.Version}")
-                </span>
-                <span class="text-muted" id="versionLabel">
-                    @(Model.Status == "Updated" ? "Revised version" :
-                        Model.Status == "Published" ? "Official release" :
-                        "Draft version")
-                </span>
+            <!-- Title -->
+            <div class="mb-3">
+                <label class="form-label text-light">Document Title</label>
+                <input asp-for="Title" class="form-control form-control-lg text-light bg-transparent border-light" required />
+                <div class="invalid-feedback text-warning">Please enter the document title.</div>
             </div>
-        </div>
-    </div>
 
-    <button type="submit" class="btn btn-primary">💾 Update</button>
-    <a asp-action="Index" class="btn btn-secondary">🔙 Back</a>
-</form>
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label text-light">Description</label>
+                <textarea asp-for="Description" class="form-control text-light bg-transparent border-light" rows="3" required></textarea>
+                <div class="invalid-feedback text-warning">Description cannot be empty.</div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-4">
+                <label class="form-label text-light">Status</label>
+                <select asp-for="Status" class="form-select bg-transparent text-light border-light" required>
+                    <option value="Draft" class="text-dark" selected="@(Model.Status == "Draft")">Draft</option>
+                    <option value="Published" class="text-dark" selected="@(Model.Status == "Published")">Published</option>
+                </select>
+                <div class="invalid-feedback text-warning">Please select document status.</div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="mb-4">
+                <label class="form-label text-light">Replace File (optional)</label>
+                <input type="file" name="FileUpload" class="form-control bg-transparent text-light border-light" accept=".pdf,.doc,.docx,.xls,.xlsx" />
+                <div class="form-text text-secondary">
+                    Leave empty if you don't want to replace the file.<br />
+                    <strong>Current File:</strong> @Model.OriginalFileName
+                </div>
+            </div>
+
+            <!-- Version -->
+            <div class="mb-4">
+                <label class="form-label text-light">Version</label>
+                <input type="text" value=@($"v{Model.Version}") class="form-control text-light bg-transparent border-light" disabled />
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary btn-glass px-4 rounded-pill">
+                    <i class="bi bi-save2"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const form = document.getElementById("editDocForm");
-            const fileInput = form.querySelector("input[name='FileUpload']");
-            const progressBarContainer = document.querySelector(".progress");
-            const progressBar = document.getElementById("uploadProgress");
-            const versionBadge = document.getElementById("versionBadge");
-            const versionLabel = document.getElementById("versionLabel");
-            const allowedExts = [".doc", ".docx", ".xls", ".xlsx", ".pdf", ".PDF"];
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
 
-            fileInput.addEventListener("change", function () {
-                const fileName = this.files[0]?.name || "";
-                const ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
-
-                if (!allowedExts.includes(ext)) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "File tidak valid!",
-                        text: "Hanya file Word, Excel, atau PDF yang diperbolehkan.",
-                        confirmButtonColor: "#d33"
-                    });
-                    this.value = "";
-                    return;
-                }
-            });
-
-            form.addEventListener("submit", async function (e) {
-                e.preventDefault();
-
-                const formData = new FormData(form);
-
-                progressBarContainer.style.display = "block";
-                progressBar.style.width = "0%";
-                progressBar.textContent = "0%";
-
-                const xhr = new XMLHttpRequest();
-                xhr.open("POST", "/Document/Edit", true);
-
-                xhr.upload.addEventListener("progress", function (e) {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        progressBar.style.width = percent + "%";
-                        progressBar.textContent = percent + "%";
-                    }
+            if (success && success !== "") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: success,
+                    timer: 2000,
+                    showConfirmButton: false
                 });
+            } else if (error && error !== "") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed!",
+                    text: error,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
 
-                xhr.onload = function () {
-                    progressBarContainer.style.display = "none";
-                    if (xhr.status === 200 || xhr.status === 302) {
-                        let currentVer = parseInt(versionBadge.innerText.replace("v", "")) || 1;
-                        currentVer++;
-
-                        versionBadge.innerText = "v" + currentVer;
-                        versionBadge.className = "badge bg-warning text-dark me-2 px-3 py-2";
-                        versionLabel.innerText = "Revised version";
-
+            // ✅ Bootstrap validation
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
                         Swal.fire({
-                            icon: "success",
-                            title: "File berhasil diupdate ke v" + currentVer +"",
-                            text: "Dokumen telah diperbarui.",
+                            icon: 'warning',
+                            title: 'Invalid!',
+                            text: 'Please check the form and try again.',
                             timer: 2000,
                             showConfirmButton: false
-                        }). then(() => {
-                            window.location.href = "/Document/Index";
                         });
-
-                    } else {
-                        Swal.fire({ icon: "error", title: "Gagal", text: "Gagal memperbarui dokumen." });
                     }
-                };
-
-                xhr.onerror = function () {
-                    progressBarContainer.style.display = "none";
-                    Swal.fire({ icon: "error", title: "Error", text: "Terjadi kesalahan jaringan." });
-                };
-
-                xhr.send(formData);
+                    form.classList.add('was-validated');
+                }, false);
             });
         });
     </script>

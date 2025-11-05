@@ -26,18 +26,20 @@ namespace WebArsip.Api.Controllers
         {
             var logsQuery = _context.AuditLogs.AsQueryable();
 
-            if (!query.From.HasValue && !query.To.HasValue)
+            // Filter tanggal
+            if (query.From.HasValue)
             {
-                var defaultFrom = DateTime.UtcNow.AddDays(-30);
-                logsQuery = logsQuery.Where(l => l.Timestamp >= defaultFrom);
+                var fromLocal = TimeZoneInfo.ConvertTimeToUtc(query.From.Value,
+                    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+                logsQuery = logsQuery.Where(l => l.Timestamp >= fromLocal);
             }
-            else
-            {
-                if (query.From.HasValue)
-                    logsQuery = logsQuery.Where(l => l.Timestamp >= query.From.Value);
 
-                if (query.To.HasValue)
-                    logsQuery = logsQuery.Where(l => l.Timestamp <= query.To.Value);
+            if (query.To.HasValue)
+            {
+                // tambahkan +1 hari supaya include semua log di hari "To"
+                var toLocal = TimeZoneInfo.ConvertTimeToUtc(query.To.Value.AddDays(1),
+                    TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+                logsQuery = logsQuery.Where(l => l.Timestamp < toLocal);
             }
 
             if (!string.IsNullOrEmpty(query.UserId))
@@ -45,7 +47,6 @@ namespace WebArsip.Api.Controllers
 
             if (!string.IsNullOrEmpty(query.Action))
                 logsQuery = logsQuery.Where(l => l.Action == query.Action);
-
 
             var page = query.Page <= 0 ? 1 : query.Page;
             var pageSize = query.PageSize <= 0 ? 20 : (query.PageSize > 100 ? 100 : query.PageSize);
@@ -58,20 +59,37 @@ namespace WebArsip.Api.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
+            // ✅ Ambil semua user & dokumen untuk mapping cepat
+            var users = await _context.Users.ToDictionaryAsync(u => u.Id.ToString(), u => u.Name);
+            var documents = await _context.Documents.ToDictionaryAsync(d => d.DocId.ToString(), d => d.Title);
+
             var result = new PagedResult<AuditLogReadDto>
             {
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = totalCount,
-                Items = logs.Select(l => new AuditLogReadDto
+                Items = logs.Select(l =>
                 {
-                    AuditLogId = l.AuditLogId,
-                    UserId = l.UserId,
-                    Action = l.Action,
-                    EntityName = l.EntityName,
-                    EntityId = l.EntityId,
-                    Timestamp = l.Timestamp,
-                    Details = l.Details
+                    string userName = "(Unknown User)";
+                    if (!string.IsNullOrEmpty(l.UserId) && users.ContainsKey(l.UserId))
+                        userName = users[l.UserId];
+                    else if (!string.IsNullOrEmpty(l.UserId))
+                        userName = $"User ID: {l.UserId}";
+
+                    string details = l.Details;
+                    if (l.EntityName == "Document" && !string.IsNullOrEmpty(l.EntityId) && documents.ContainsKey(l.EntityId))
+                        details = $"Document: {documents[l.EntityId]}";
+
+                    return new AuditLogReadDto
+                    {
+                        AuditLogId = l.AuditLogId,
+                        UserId = userName,
+                        Action = l.Action,
+                        EntityName = l.EntityName,
+                        EntityId = l.EntityId,
+                        Timestamp = l.Timestamp,
+                        Details = details
+                    };
                 }).ToList()
             };
 

@@ -18,13 +18,12 @@ namespace WebArsip.Api.Controllers
         {
             _context = context;
         }
-        
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<PermissionReadDto>>> GetPermissions()
         {
             var permissions = await _context.Permissions
                 .Include(p => p.Role)
-                .Include(p => p.Document)
                 .ToListAsync();
 
             return permissions.Select(p => new PermissionReadDto
@@ -32,8 +31,6 @@ namespace WebArsip.Api.Controllers
                 PermissionId = p.PermissionId,
                 RoleId = p.RoleId,
                 RoleName = p.Role.Name,
-                DocId = p.DocId,
-                DocTitle = p.Document.Title,
                 CanView = p.CanView,
                 CanEdit = p.CanEdit,
                 CanDelete = p.CanDelete,
@@ -42,21 +39,12 @@ namespace WebArsip.Api.Controllers
             }).ToList();
         }
 
-        [HttpGet("count")]
-        [Authorize(Roles = "Admin")]
-        public async Task<ActionResult<int>> GetPermissionCount()
-        {
-            var count = await _context.Permissions.CountAsync();
-            return Ok(count);
-        }
-
         [HttpPost]
         public async Task<ActionResult<PermissionReadDto>> CreatePermission(PermissionCreateDto dto)
         {
             var permission = new Permission
             {
                 RoleId = dto.RoleId,
-                DocId = dto.DocId,
                 CanView = dto.CanView,
                 CanEdit = dto.CanEdit,
                 CanDelete = dto.CanDelete,
@@ -67,23 +55,17 @@ namespace WebArsip.Api.Controllers
             _context.Permissions.Add(permission);
             await _context.SaveChangesAsync();
 
-            var result = await _context.Permissions
-                .Include(p => p.Role)
-                .Include(p => p.Document)
-                .FirstAsync(p => p.PermissionId == permission.PermissionId);
-
+            var role = await _context.Roles.FindAsync(dto.RoleId);
             return new PermissionReadDto
             {
-                PermissionId = result.PermissionId,
-                RoleId = result.RoleId,
-                RoleName = result.Role.Name,
-                DocId = result.DocId,
-                DocTitle = result.Document.Title,
-                CanView = result.CanView,
-                CanEdit = result.CanEdit,
-                CanDelete = result.CanDelete,
-                CanDownload = result.CanDownload,
-                CanUpload = result.CanUpload
+                PermissionId = permission.PermissionId,
+                RoleId = dto.RoleId,
+                RoleName = role?.Name ?? string.Empty,
+                CanView = dto.CanView,
+                CanEdit = dto.CanEdit,
+                CanDelete = dto.CanDelete,
+                CanDownload = dto.CanDownload,
+                CanUpload = dto.CanUpload
             };
         }
 
@@ -94,7 +76,6 @@ namespace WebArsip.Api.Controllers
             if (permission == null) return NotFound();
 
             permission.RoleId = dto.RoleId;
-            permission.DocId = dto.DocId;
             permission.CanView = dto.CanView;
             permission.CanEdit = dto.CanEdit;
             permission.CanDelete = dto.CanDelete;

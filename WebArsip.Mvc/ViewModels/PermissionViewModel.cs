@@ -4,7 +4,6 @@
     {
         public int PermissionId { get; set; }
         public int RoleId { get; set; }
-        public int DocId { get; set; }
 
         public bool CanView { get; set; }
         public bool CanEdit { get; set; }
@@ -13,6 +12,5 @@
         public bool CanUpload { get; set; }
 
         public string RoleName { get; set; } = string.Empty;
-        public string DocumentTitle { get; set; } = string.Empty;
     }
 }

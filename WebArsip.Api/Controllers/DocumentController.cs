@@ -16,67 +16,84 @@ namespace WebArsip.Api.Controllers
     {
         private readonly AppDbContext _context;
         private readonly AuditLogService _auditLogService;
+        private readonly PermissionService _permissionService;
 
-        public DocumentController(AppDbContext context, AuditLogService auditLogService)
+        public DocumentController(AppDbContext context, AuditLogService auditLogService, PermissionService permissionService)
         {
             _context = context;
             _auditLogService = auditLogService;
+            _permissionService = permissionService;
         }
 
-        private bool IsAdmin(IEnumerable<string> roles) => roles.Contains("Admin");
+        private string GetUserEmail() => User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+        private string? GetUserRole() => User.FindFirst(ClaimTypes.Role)?.Value;
+        private bool IsAdmin(string? role) => role == "Admin";
+        private static DateTime NowLocal() =>
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
 
-        private async Task<bool> HasPermission(IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
+        // ✅ Check Access (Role + User-level)
+        private async Task<bool> HasAccessAsync(string email, IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
         {
-            if (IsAdmin(roleNames)) return true;
+            if (roleNames.Contains("Admin"))
+                return true;
 
-            var roleIds = await _context.Roles
-                .Where(r => roleNames.Contains(r.Name))
-                .Select(r => r.Id)
+            var rolePermissions = await _context.Permissions
+                .Include(p => p.Role)
+                .Where(p => p.Role != null && roleNames.Contains(p.Role.Name))
                 .ToListAsync();
 
-            if (!roleIds.Any()) return false;
+            if (rolePermissions.Any(predicate))
+                return true;
 
-            var permission = await _context.Permissions
-                .FirstOrDefaultAsync(p => roleIds.Contains(p.RoleId) && p.DocId == docId);
+            var userPermission = await _context.UserPermissions
+                .FirstOrDefaultAsync(up => up.UserEmail == email && up.DocId == docId);
 
-            return permission != null && predicate(permission);
+            if (userPermission != null)
+            {
+                var converted = new Permission
+                {
+                    CanView = userPermission.CanView,
+                    CanEdit = userPermission.CanEdit,
+                    CanDelete = userPermission.CanDelete,
+                    CanUpload = userPermission.CanUpload,
+                    CanDownload = userPermission.CanDownload
+                };
+
+                if (predicate(converted))
+                    return true;
+            }
+
+            return false;
         }
 
-        private string GetStorageFilePath(string relativeFilePath)
-        {
-            var root = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage");
-            var relative = relativeFilePath.TrimStart('/', '\\');
-            return Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
-        }
-
-        // ✅ Get All
+        // ✅ GET All Documents
         [HttpGet]
         public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-            IQueryable<Document> docsQuery = _context.Documents;
+            var email = GetUserEmail();
+            var role = GetUserRole();
 
-            if (!roles.Contains("Admin"))
+            IQueryable<Document> docsQuery = _context.Documents.AsQueryable();
+
+            if (!IsAdmin(role))
             {
-                var roleIds = await _context.Roles
-                    .Where(r => roles.Contains(r.Name))
-                    .Select(r => r.Id)
+                // User non-admin hanya bisa lihat dokumen yang diizinkan
+                var allowedIds = await _context.UserPermissions
+                    .Where(up => up.UserEmail == email && up.CanView)
+                    .Select(up => up.DocId)
                     .ToListAsync();
 
-                docsQuery = _context.Permissions
-                    .Where(p => roleIds.Contains(p.RoleId) && p.CanView)
-                    .Select(p => p.Document);
+                docsQuery = docsQuery.Where(d => allowedIds.Contains(d.DocId));
             }
 
             var totalCount = await docsQuery.CountAsync();
-
             var docs = await docsQuery
                 .OrderByDescending(d => d.CreatedDate)
                 .Skip((query.Page - 1) * query.PageSize)
                 .Take(query.PageSize)
                 .ToListAsync();
 
-            var result = new PagedResult<DocumentReadDto>
+            return Ok(new PagedResult<DocumentReadDto>
             {
                 Page = query.Page,
                 PageSize = query.PageSize,
@@ -93,64 +110,17 @@ namespace WebArsip.Api.Controllers
                     Status = d.Status,
                     Version = d.Version
                 }).ToList()
-            };
-
-            return Ok(result);
+            });
         }
 
-        // ✅ Get by ID
+        // ✅ GET By Id
         [HttpGet("{id}")]
-        public async Task<ActionResult<DocumentReadDto>> GetDocument(int id)
+        public async Task<IActionResult> GetById(int id)
         {
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
-            return new DocumentReadDto
-            {
-                DocId = doc.DocId,
-                Title = doc.Title,
-                Description = doc.Description,
-                FilePath = doc.FilePath,
-                OriginalFileName = doc.OriginalFileName,
-                CreatedDate = doc.CreatedDate,
-                UpdatedAt = doc.UpdatedAt,
-                Status = doc.Status,
-                Version = doc.Version
-            };
-        }
-
-        [HttpGet("count")]
-        [Authorize]
-        public async Task<ActionResult<int>> GetDocumentCount()
-        {
-            var count = await _context.Documents.CountAsync();
-            return Ok(count);
-        }
-
-        // ✅ Create
-        [HttpPost]
-        public async Task<ActionResult<DocumentReadDto>> CreateDocument(DocumentCreateDto dto)
-        {
-            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-            if (!await HasPermission(roles, 1, p => p.CanUpload)) return Forbid();
-
-            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
-            var doc = new Document
-            {
-                Title = dto.Title,
-                Description = dto.Description,
-                FilePath = dto.FilePath,
-                OriginalFileName = dto.OriginalFileName,
-                CreatedDate = wibNow,
-                Status = string.IsNullOrWhiteSpace(dto.Status) ? "Draft" : dto.Status,
-                Version = 1
-            };
-
-            _context.Documents.Add(doc);
-            await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "CREATE", "Document", doc.DocId.ToString(), $"Dokumen baru dibuat: {doc.Title}");
-
-            return CreatedAtAction(nameof(GetDocument), new { id = doc.DocId }, new DocumentReadDto
+            return Ok(new DocumentReadDto
             {
                 DocId = doc.DocId,
                 Title = doc.Title,
@@ -163,70 +133,118 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // ✅ Update (dengan perbaikan versi & status)
+        // ✅ CREATE Document
+        [HttpPost]
+        public async Task<IActionResult> CreateDocument(DocumentCreateDto dto)
+        {
+            var email = GetUserEmail();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+            var role = GetUserRole();
+
+            // 🔹 Cek apakah user punya izin upload
+            if (!await HasAccessAsync(email, roles, 0, p => p.CanUpload))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "CREATE", "Document", "N/A", "User lacks upload permission");
+                return Forbid();
+            }
+
+            var now = NowLocal();
+
+            var doc = new Document
+            {
+                Title = dto.Title,
+                Description = dto.Description,
+                FilePath = dto.FilePath,
+                OriginalFileName = dto.OriginalFileName,
+                CreatedDate = now,
+                Status = dto.Status ?? "Draft",
+                Version = 1,
+                CreatedBy = email
+            };
+
+            _context.Documents.Add(doc);
+            await _context.SaveChangesAsync();
+
+            // ✅ Auto Ownership Logic
+            // Hanya berlaku untuk Compliance, Audit, Policy
+            if (role is "Compliance" or "Audit" or "Policy")
+            {
+                var existingPerm = await _context.UserPermissions
+                    .FirstOrDefaultAsync(up => up.UserEmail == email && up.DocId == doc.DocId);
+
+                if (existingPerm == null)
+                {
+                    _context.UserPermissions.Add(new UserPermission
+                    {
+                        UserEmail = email,
+                        DocId = doc.DocId,
+                        CanView = true,
+                        CanEdit = true,
+                        CanUpload = true,
+                        CanDownload = true,
+                        CanDelete = true
+                    });
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // 🔹 Log pembuatan dokumen
+            await _auditLogService.LogAsync(User, "CREATE", "Document", doc.DocId.ToString(), $"Dokumen dibuat: {doc.Title}");
+
+            return Ok(new { success = true, message = "Dokumen berhasil dibuat.", id = doc.DocId });
+        }
+
+        // ✅ UPDATE Document
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
+            var email = GetUserEmail();
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-            if (!await HasPermission(roles, id, p => p.CanEdit)) return Forbid();
+
+            if (!await HasAccessAsync(email, roles, id, p => p.CanEdit))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "UPDATE", "Document", id.ToString(), "User lacks edit permission");
+                return Forbid();
+            }
 
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
 
-            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+            bool changed = false;
 
-            doc.Title = dto.Title;
-            doc.Description = dto.Description;
-            doc.UpdatedAt = wibNow;
+            if (doc.Title != dto.Title) { doc.Title = dto.Title; changed = true; }
+            if (doc.Description != dto.Description) { doc.Description = dto.Description; changed = true; }
 
-            // 🔧 File handling
-            if (!string.IsNullOrEmpty(dto.FilePath))
+            if (!string.IsNullOrEmpty(dto.FilePath) && dto.FilePath != doc.FilePath)
             {
                 doc.FilePath = dto.FilePath;
                 doc.OriginalFileName = dto.OriginalFileName;
+                changed = true;
             }
 
-            // 🔥 Perbaikan logika versioning
-            if (doc.Status == "Published" && dto.Status == "Published")
-            {
-                // Jangan turunkan versi, tetap "Updated"
-                doc.Status = "Updated";
-                doc.Version += 1;
-            }
-            else if (doc.Status == "Updated" && dto.Status == "Published")
-            {
-                // Kalau user coba publish ulang, tetap anggap revisi
-                doc.Status = "Updated";
-                doc.Version += 1;
-            }
-            else if (doc.Status == "Updated" && dto.Status == "Updated")
+            if (changed)
             {
                 doc.Version += 1;
-            }
-            else if (string.IsNullOrWhiteSpace(doc.Status))
-            {
-                // Kalau belum punya status, set Published
-                doc.Status = "Published";
-                doc.Version = 1;
-            }
-            else
-            {
-                // Untuk status lain (Draft, Rejected, dsb.)
-                doc.Status = dto.Status ?? doc.Status;
+                doc.UpdatedAt = NowLocal();
+                await _context.SaveChangesAsync();
+                await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui: {doc.Title}");
             }
 
-            await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui ke versi v{doc.Version}");
-
-            return NoContent();
+            return Ok(new { success = true, message = "Dokumen berhasil diperbarui." });
         }
 
-        // ✅ Delete
+        // ✅ DELETE Document
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
+            var email = GetUserEmail();
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
-            if (!await HasPermission(roles, id, p => p.CanDelete)) return Forbid();
+
+            if (!await HasAccessAsync(email, roles, id, p => p.CanDelete))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "DELETE", "Document", id.ToString(), "User lacks delete permission");
+                return Forbid();
+            }
 
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound();
@@ -234,52 +252,48 @@ namespace WebArsip.Api.Controllers
             _context.Documents.Remove(doc);
             await _context.SaveChangesAsync();
             await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(), $"Dokumen dihapus: {doc.Title}");
-            return NoContent();
+
+            return Ok(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
-        // ✅ Stream File (Download)
-        [AllowAnonymous]
+        // ✅ DOWNLOAD
+        [HttpGet("download/{id}")]
+        public async Task<IActionResult> DownloadDocument(int id)
+        {
+            var email = GetUserEmail();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+
+            if (!await HasAccessAsync(email, roles, id, p => p.CanDownload))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "DOWNLOAD", "Document", id.ToString(), "User lacks download permission");
+                return Forbid();
+            }
+
+            var doc = await _context.Documents.FindAsync(id);
+            if (doc == null) return NotFound();
+
+            var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads", doc.FilePath);
+            if (!System.IO.File.Exists(path))
+                return NotFound("File tidak ditemukan di server.");
+
+            var bytes = await System.IO.File.ReadAllBytesAsync(path);
+            return File(bytes, "application/octet-stream", doc.OriginalFileName ?? Path.GetFileName(path));
+        }
+
+        // ✅ STREAM for Preview (MVC)
         [HttpGet("stream/{id}")]
-        public async Task<IActionResult> StreamFile(int id)
+        public async Task<IActionResult> StreamDocument(int id)
         {
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null || string.IsNullOrEmpty(doc.FilePath))
                 return NotFound();
 
-            var storagePath = Path.Combine(
-                Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                "WebArsipStorage", "uploads"
-            );
-
-            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath ?? ""));
-            if (!System.IO.File.Exists(filePath))
-                return NotFound("File not found on server.");
-
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
-            return File(stream, "application/octet-stream", doc.OriginalFileName ?? Path.GetFileName(filePath));
-        }
-
-        // ✅ Preview File (Inline)
-        [AllowAnonymous]
-        [HttpGet("preview/{id}")]
-        public async Task<IActionResult> PreviewFile(int id)
-        {
-            var doc = await _context.Documents.FindAsync(id);
-            if (doc == null || string.IsNullOrEmpty(doc.FilePath))
-                return NotFound("Dokumen tidak ditemukan.");
-
-            var storagePath = Path.Combine(
-                Directory.GetParent(Directory.GetCurrentDirectory())!.FullName,
-                "WebArsipStorage", "uploads"
-            );
-            var filePath = Path.Combine(storagePath, Path.GetFileName(doc.FilePath ?? ""));
-
-            if (!System.IO.File.Exists(filePath))
+            var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads", doc.FilePath);
+            if (!System.IO.File.Exists(path))
                 return NotFound("File tidak ditemukan di server.");
 
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            var mimeType = ext switch
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            var mime = ext switch
             {
                 ".pdf" => "application/pdf",
                 ".doc" => "application/msword",
@@ -289,13 +303,39 @@ namespace WebArsip.Api.Controllers
                 _ => "application/octet-stream"
             };
 
-            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
-            Response.Headers["Pragma"] = "no-cache";
-            Response.Headers["Expires"] = "0";
-            Response.Headers["Content-Disposition"] = $"inline; filename=\"{doc.OriginalFileName}\"";
+            var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            return new FileStreamResult(stream, mime);
+        }
 
-            return new FileStreamResult(stream, mimeType);
+        // ✅ PREVIEW Document
+        [HttpGet("preview/{id}")]
+        public async Task<IActionResult> PreviewDocument(int id)
+        {
+            var email = GetUserEmail();
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value);
+
+            if (!await HasAccessAsync(email, roles, id, p => p.CanView))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "VIEW", "Document", id.ToString(), "User lacks view/preview permission");
+                return Forbid();
+            }
+
+            var doc = await _context.Documents.FindAsync(id);
+            if (doc == null) return NotFound();
+
+            var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads", doc.FilePath);
+            if (!System.IO.File.Exists(path))
+                return NotFound();
+
+            var mime = Path.GetExtension(path).ToLowerInvariant() switch
+            {
+                ".pdf" => "application/pdf",
+                _ => "application/octet-stream"
+            };
+
+            var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{doc.OriginalFileName}\"";
+            return new FileStreamResult(stream, mime);
         }
     }
 }

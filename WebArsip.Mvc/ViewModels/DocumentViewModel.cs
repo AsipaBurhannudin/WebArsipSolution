@@ -11,5 +11,6 @@
         public string Status { get; set; } = string.Empty;
         public int Version { get; set; } = 1;
         public string? OriginalFileName { get; set; }
+        public string? CreatedBy { get; set; }
     }
 }

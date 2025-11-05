@@ -22,6 +22,49 @@ namespace WebArsip.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Document", b =>
+                {
+                    b.Property<int>("DocId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("DocId");
+
+                    b.ToTable("Documents");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -139,9 +182,12 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Property<int>("DocId")
                         .HasColumnType("int");
 
+                    b.Property<int>("DocumentDocId")
+                        .HasColumnType("int");
+
                     b.HasKey("ArchiveId");
 
-                    b.HasIndex("DocId");
+                    b.HasIndex("DocumentDocId");
 
                     b.ToTable("Archives");
                 });
@@ -182,46 +228,6 @@ namespace WebArsip.Infrastructure.Migrations
                     b.ToTable("AuditLogs");
                 });
 
-            modelBuilder.Entity("WebArsip.Core.Entities.Document", b =>
-                {
-                    b.Property<int>("DocId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocId"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FilePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OriginalFileName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("int");
-
-                    b.HasKey("DocId");
-
-                    b.ToTable("Documents");
-                });
-
             modelBuilder.Entity("WebArsip.Core.Entities.Permission", b =>
                 {
                     b.Property<int>("PermissionId")
@@ -245,65 +251,14 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Property<bool>("CanView")
                         .HasColumnType("bit");
 
-                    b.Property<int>("DocId")
-                        .HasColumnType("int");
-
                     b.Property<int>("RoleId")
                         .HasColumnType("int");
 
                     b.HasKey("PermissionId");
 
-                    b.HasIndex("DocId");
-
                     b.HasIndex("RoleId");
 
                     b.ToTable("Permissions");
-
-                    b.HasData(
-                        new
-                        {
-                            PermissionId = 1,
-                            CanDelete = true,
-                            CanDownload = false,
-                            CanEdit = true,
-                            CanUpload = true,
-                            CanView = true,
-                            DocId = 2,
-                            RoleId = 1
-                        },
-                        new
-                        {
-                            PermissionId = 2,
-                            CanDelete = true,
-                            CanDownload = false,
-                            CanEdit = false,
-                            CanUpload = false,
-                            CanView = true,
-                            DocId = 2,
-                            RoleId = 2
-                        },
-                        new
-                        {
-                            PermissionId = 3,
-                            CanDelete = false,
-                            CanDownload = false,
-                            CanEdit = false,
-                            CanUpload = false,
-                            CanView = true,
-                            DocId = 2,
-                            RoleId = 3
-                        },
-                        new
-                        {
-                            PermissionId = 4,
-                            CanDelete = false,
-                            CanDownload = false,
-                            CanEdit = true,
-                            CanUpload = true,
-                            CanView = true,
-                            DocId = 2,
-                            RoleId = 4
-                        });
                 });
 
             modelBuilder.Entity("WebArsip.Core.Entities.Role", b =>
@@ -413,11 +368,11 @@ namespace WebArsip.Infrastructure.Migrations
 
             modelBuilder.Entity("WebArsip.Core.Entities.UserPermission", b =>
                 {
-                    b.Property<int>("UserPermissionId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserPermissionId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("CanDelete")
                         .HasColumnType("bit");
@@ -437,19 +392,13 @@ namespace WebArsip.Infrastructure.Migrations
                     b.Property<int>("DocId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("DocumentDocId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserEmail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("UserPermissionId");
+                    b.HasKey("Id");
 
                     b.HasIndex("DocId");
-
-                    b.HasIndex("DocumentDocId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("UserPermissions");
                 });
@@ -507,9 +456,9 @@ namespace WebArsip.Infrastructure.Migrations
 
             modelBuilder.Entity("WebArsip.Core.Entities.Archive", b =>
                 {
-                    b.HasOne("WebArsip.Core.Entities.Document", "Document")
+                    b.HasOne("Document", "Document")
                         .WithMany("Archives")
-                        .HasForeignKey("DocId")
+                        .HasForeignKey("DocumentDocId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -518,51 +467,29 @@ namespace WebArsip.Infrastructure.Migrations
 
             modelBuilder.Entity("WebArsip.Core.Entities.Permission", b =>
                 {
-                    b.HasOne("WebArsip.Core.Entities.Document", "Document")
-                        .WithMany("Permissions")
-                        .HasForeignKey("DocId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("WebArsip.Core.Entities.Role", "Role")
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Document");
-
                     b.Navigation("Role");
                 });
 
             modelBuilder.Entity("WebArsip.Core.Entities.UserPermission", b =>
                 {
-                    b.HasOne("WebArsip.Core.Entities.Document", "Document")
-                        .WithMany()
+                    b.HasOne("Document", "Document")
+                        .WithMany("UserPermissions")
                         .HasForeignKey("DocId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebArsip.Core.Entities.Document", null)
-                        .WithMany("UserPermissions")
-                        .HasForeignKey("DocumentDocId");
-
-                    b.HasOne("WebArsip.Core.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Document");
-
-                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("WebArsip.Core.Entities.Document", b =>
+            modelBuilder.Entity("Document", b =>
                 {
                     b.Navigation("Archives");
-
-                    b.Navigation("Permissions");
 
                     b.Navigation("UserPermissions");
                 });

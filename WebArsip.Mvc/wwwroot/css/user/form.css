@@ -1,0 +1,55 @@
+﻿body {
+    background: linear-gradient(145deg, #0d1117, #161b22);
+    color: #e6edf3;
+    font-family: 'Poppins', sans-serif;
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(15px);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: 0.3s ease-in-out;
+}
+
+    .glass-card:hover {
+        transform: scale(1.01);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+.glass-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+    .glass-input:focus {
+        background: #0d111f;
+        border-color: #00c6ff;
+        box-shadow: 0 0 8px #00c6ff50;
+        color: #fff;
+    }
+
+.btn-glass {
+    background: linear-gradient(90deg, #0072ff, #00c6ff);
+    color: #fff;
+    border: none;
+    transition: 0.3s ease;
+}
+
+    .btn-glass:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 10px #00c6ff80;
+    }
+
+label {
+    color: #dce1e6;
+}

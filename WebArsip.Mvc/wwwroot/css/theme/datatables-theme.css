@@ -1,0 +1,100 @@
+﻿/* 🌌 GLOBAL DATATABLES THEME — Dark Glassmorphism */
+.dataTables_wrapper {
+    color: #e6edf3;
+    background: transparent;
+    border-radius: 16px;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* 🔍 Search box */
+.dataTables_filter {
+    margin-bottom: 15px;
+    padding : 10px 
+}
+.dataTables_filter label {
+    color: #9fb3c8;
+    font-weight: 500;
+}
+.dataTables_filter input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: #00c6ff80;
+    padding: 6px 10px;
+    transition: 0.3s ease;
+}
+.dataTables_filter input:focus {
+    outline: none;
+    box-shadow: 0 0 8px #00c6ff80;
+    border-color: #00c6ff;
+}
+
+/* 📋 Show entries */
+.dataTables_length label {
+    color: #9fb3c8;
+    font-weight: 500;
+}
+.dataTables_length select {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e6edf3;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 4px 10px;
+    transition: 0.3s;
+}
+.dataTables_length select:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* 📄 Paging buttons */
+.dataTables_paginate {
+    margin-top: 15px;
+}
+.dataTables_paginate .paginate_button {
+    color: #00c6ff !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 5px 10px;
+    margin: 0 3px;
+    transition: 0.3s ease;
+    cursor: pointer;
+}
+.dataTables_paginate .paginate_button:hover {
+    background: rgba(0, 198, 255, 0.15);
+    color: #fff !important;
+    box-shadow: 0 0 10px #00c6ff40;
+}
+.dataTables_paginate .paginate_button.current {
+    background: linear-gradient(90deg, #00c6ff, #0072ff) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 0 8px #00c6ff60;
+}
+
+/* 📊 Info text */
+.dataTables_info {
+    color: #9fb3c8;
+    font-size: 0.9rem;
+    padding-top: 10px;
+}
+
+/* 🌀 Processing overlay */
+table.dataTable.processing:after {
+    content: "Loading...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #00c6ff;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* 🌈 Hover & transitions */
+table.dataTable tbody tr:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transition: background 0.3s ease;
+}

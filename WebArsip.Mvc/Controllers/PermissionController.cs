@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using WebArsip.Mvc.Models.ViewModels;
-using static WebArsip.Mvc.Controllers.DocumentController;
 
 namespace WebArsip.Mvc.Controllers
 {
@@ -23,7 +21,6 @@ namespace WebArsip.Mvc.Controllers
             if (!string.IsNullOrEmpty(token))
                 client.DefaultRequestHeaders.Authorization =
                     new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
             return client;
         }
 
@@ -31,6 +28,7 @@ namespace WebArsip.Mvc.Controllers
         {
             var client = CreateClient();
             var response = await client.GetAsync("permission");
+
             if (!response.IsSuccessStatusCode)
                 return View(new List<PermissionViewModel>());
 
@@ -43,7 +41,19 @@ namespace WebArsip.Mvc.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            await LoadDropdowns();
+            var client = CreateClient();
+            var roleResp = await client.GetAsync("role");
+            if (roleResp.IsSuccessStatusCode)
+            {
+                var body = await roleResp.Content.ReadAsStringAsync();
+                var roles = JsonConvert.DeserializeObject<List<RoleViewModel>>(body) ?? new();
+                ViewBag.Roles = new SelectList(roles, "RoleId", "RoleName");
+            }
+            else
+            {
+                ViewBag.Roles = new SelectList(new List<RoleViewModel>());
+            }
+
             return View();
         }
 
@@ -52,8 +62,8 @@ namespace WebArsip.Mvc.Controllers
         {
             if (!ModelState.IsValid)
             {
-                await LoadDropdowns();
-                return View(model);
+                TempData["Error"] = "Data permission tidak valid.";
+                return RedirectToAction(nameof(Create));
             }
 
             var client = CreateClient();
@@ -62,8 +72,7 @@ namespace WebArsip.Mvc.Controllers
             if (!response.IsSuccessStatusCode)
             {
                 TempData["Error"] = "Gagal menambahkan permission.";
-                await LoadDropdowns();
-                return View(model);
+                return RedirectToAction(nameof(Create));
             }
 
             TempData["Success"] = "Permission berhasil ditambahkan!";
@@ -74,14 +83,23 @@ namespace WebArsip.Mvc.Controllers
         public async Task<IActionResult> Edit(int id)
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"permission/{id}");
-            if (!response.IsSuccessStatusCode) return RedirectToAction(nameof(Index));
+            var resp = await client.GetAsync("permission");
+            if (!resp.IsSuccessStatusCode) return RedirectToAction(nameof(Index));
 
-            var body = await response.Content.ReadAsStringAsync();
-            var data = JsonConvert.DeserializeObject<PermissionViewModel>(body);
+            var body = await resp.Content.ReadAsStringAsync();
+            var list = JsonConvert.DeserializeObject<List<PermissionViewModel>>(body) ?? new();
+            var permission = list.FirstOrDefault(p => p.PermissionId == id);
+            if (permission == null) return RedirectToAction(nameof(Index));
 
-            await LoadDropdowns();
-            return View(data);
+            var roleResp = await client.GetAsync("role");
+            if (roleResp.IsSuccessStatusCode)
+            {
+                var roleBody = await roleResp.Content.ReadAsStringAsync();
+                var roles = JsonConvert.DeserializeObject<List<RoleViewModel>>(roleBody) ?? new();
+                ViewBag.Roles = new SelectList(roles, "RoleId", "RoleName", permission.RoleId);
+            }
+
+            return View(permission);
         }
 
         [HttpPost]
@@ -89,43 +107,32 @@ namespace WebArsip.Mvc.Controllers
         {
             if (!ModelState.IsValid)
             {
-                await LoadDropdowns();
-                return View(model);
+                TempData["Error"] = "Data tidak valid.";
+                return RedirectToAction(nameof(Edit), new { id = model.PermissionId });
             }
 
             var client = CreateClient();
-            var response = await client.PutAsJsonAsync($"permission/{model.PermissionId}", model);
+            var payload = new
+            {
+                RoleId = model.RoleId,
+                CanView = model.CanView,
+                CanEdit = model.CanEdit,
+                CanDelete = model.CanDelete,
+                CanUpload = model.CanUpload,
+                CanDownload = model.CanDownload
+            };
+
+            var response = await client.PutAsJsonAsync($"permission/{model.PermissionId}", payload);
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = "Gagal update permission.";
-                await LoadDropdowns();
-                return View(model);
+                var errMsg = $"Gagal memperbarui permission. (HTTP {response.StatusCode})";
+                TempData["Error"] = errMsg;
+                return RedirectToAction(nameof(Edit), new { id = model.PermissionId });
             }
 
             TempData["Success"] = "Permission berhasil diperbarui!";
             return RedirectToAction(nameof(Index));
-        }
-
-        private async Task LoadDropdowns()
-        {
-            var client = CreateClient();
-
-            var roleResp = await client.GetAsync("role");
-            if (roleResp.IsSuccessStatusCode)
-            {
-                var body = await roleResp.Content.ReadAsStringAsync();
-                var roles = JsonConvert.DeserializeObject<List<RoleViewModel>>(body) ?? new();
-                ViewBag.Roles = new SelectList(roles, "RoleId", "RoleName");
-            }
-
-            var docResp = await client.GetAsync("document?page=1&pageSize=100");
-            if (docResp.IsSuccessStatusCode)
-            {
-                var body = await docResp.Content.ReadAsStringAsync();
-                var docs = JsonConvert.DeserializeObject<PagedResult<DocumentViewModel>>(body)?.Items ?? new();
-                ViewBag.Documents = new SelectList(docs, "DocId", "Title");
-            }
         }
 
         [HttpPost]
@@ -137,7 +144,7 @@ namespace WebArsip.Mvc.Controllers
             if (!response.IsSuccessStatusCode)
                 return Json(new { success = false, message = "Gagal menghapus permission." });
 
-            return Json(new { success = true, message = "Permission berhasil dihapus!" });
+            return Json(new { success = true, message = "Permission dihapus!" });
         }
     }
 }

@@ -1,76 +1,100 @@
-﻿@model IEnumerable<WebArsip.Mvc.Models.ViewModels.UserPermissionViewModel>
+﻿@model List<WebArsip.Mvc.Models.ViewModels.UserPermissionViewModel>
+
 @{
     ViewData["Title"] = "User Permissions";
     Layout = "_LayoutPrivate";
 }
 
-<div class="container mt-4">
-    <h2>🔑 User Permissions</h2>
-    <a asp-action="Create" class="btn btn-primary mb-3">➕ Add Permission</a>
+<!-- CSS -->
+<link rel="stylesheet" href="~/css/user-permission/index.css" />
+<link rel="stylesheet" href="~/css/theme/datatables-theme.css" />
+<link href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-    <table id="tblUserPermissions" class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Document</th>
-                <th>View</th>
-                <th>Upload</th>
-                <th>Edit</th>
-                <th>Delete</th>
-                <th>⚙️ Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
+<div class="container mt-4">
+    <div id="alert-data"
+         data-success="@TempData["SuccessUP"]"
+         data-error="@TempData["ErrorUP"]">
+    </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-semibold"><i class="bi bi-people-fill"></i> User Permissions</h3>
+        <a asp-action="Create" class="btn btn-primary btn-glass">
+            <i class="bi bi-plus-circle"></i> Add Permission
+        </a>
+    </div>
+
+    <div class="table-responsive shadow-sm rounded-3">
+        <table id="userPermissionTable" class="table table-striped table-hover align-middle mb-0">
+            <thead class="table-dark text-center">
                 <tr>
-                    <td>@item.UserName</td>
-                    <td>@item.UserEmail</td>
-                    <td>@item.DocumentTitle</td>
-                    <td>@(item.CanView ? "✅" : "❌")</td>
-                    <td>@(item.CanUpload ? "✅" : "❌")</td>
-                    <td>@(item.CanEdit ? "✅" : "❌")</td>
-                    <td>@(item.CanDelete ? "✅" : "❌")</td>
-                    <td>
-                        <a asp-action="Edit" asp-route-id="@item.UserPermissionId" class="btn btn-sm btn-warning">✏️ Edit</a>
-                        <button class="btn btn-sm btn-danger" onclick="deleteUserPermission(@item.UserPermissionId)">🗑️ Delete</button>
-                    </td>
+                    <th>No</th>
+                    <th>User Email</th>
+                    <th>Document</th>
+                    <th>Permissions</th>
+                    <th class="text-center">Action</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    int i = 1;
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="text-center">@i</td>
+                            <td>@item.UserEmail</td>
+                            <td>@item.DocTitle</td>
+                            <td>
+                                @if (item.CanView)
+                                {
+                                    <span class="badge bg-success me-1">View</span>
+                                }
+                                @if (item.CanEdit)
+                                {
+                                    <span class="badge bg-info text-dark me-1">Edit</span>
+                                }
+                                @if (item.CanDelete)
+                                {
+                                    <span class="badge bg-danger me-1">Delete</span>
+                                }
+                                @if (item.CanUpload)
+                                {
+                                    <span class="badge bg-secondary me-1">Upload</span>
+                                }
+                                @if (item.CanDownload)
+                                {
+                                    <span class="badge bg-warning text-dark me-1">Download</span>
+                                }
+                            </td>
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.Id"
+                                   class="btn btn-warning btn-sm rounded-pill me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm rounded-pill"
+                                        onclick="deletePermission(@item.Id)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        i++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">No user permissions found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
 @section Scripts {
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script>
-        $(document).ready(function () {
-            $('#tblUserPermissions').DataTable();
-        });
-
-        function deleteUserPermission(id) {
-            Swal.fire({
-                title: 'Yakin?',
-                text: "Data UserPermission ini akan dihapus!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Ya, hapus!'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.post('/UserPermission/Delete/' + id, function (res) {
-                        if (res.success) {
-                            Swal.fire('Terhapus!', res.message, 'success')
-                                .then(() => location.reload());
-                        } else {
-                            Swal.fire('Gagal!', res.message, 'error');
-                        }
-                    });
-                }
-            });
-        }
-    </script>
+    <script src="~/js/user-permission/index.js"></script>
+    <script src="~/js/theme/datatables-theme.js"></script>
 }

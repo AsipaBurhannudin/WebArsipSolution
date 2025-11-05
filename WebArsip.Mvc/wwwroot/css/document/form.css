@@ -1,0 +1,55 @@
+﻿body {
+    background: linear-gradient(145deg, #0d1117, #161b22);
+    color: #e6edf3;
+    font-family: 'Poppins', sans-serif;
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
+}
+
+    .glass-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 20px rgba(0, 115, 255, 0.2);
+    }
+
+.form-control,
+.form-select {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e6edf3 !important;
+    transition: 0.3s ease;
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #0072ff;
+        box-shadow: 0 0 8px rgba(0, 114, 255, 0.5);
+    }
+
+.btn-glass {
+    background: linear-gradient(90deg, #0072ff, #00c6ff);
+    border: none;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+    .btn-glass:hover {
+        transform: scale(1.05);
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+    }
+
+.invalid-feedback {
+    font-size: 0.85rem;
+    color: #ffc107 !important;
+}

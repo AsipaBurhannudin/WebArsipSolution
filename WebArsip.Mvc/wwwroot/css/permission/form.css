@@ -1,0 +1,32 @@
+﻿.permission-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.permission-card {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.text-light {
+    color: #f1f1f1 !important;
+}
+
+.permission-toggle:checked {
+    accent-color: #00bfff;
+}
+
+.permission-select {
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #000;
+    border-radius: 10px;
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border: none;
+}

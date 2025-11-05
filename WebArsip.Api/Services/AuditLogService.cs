@@ -13,18 +13,13 @@ namespace WebArsip.Infrastructure.Services
             _context = context;
         }
 
+        // ✅ Log biasa (CRUD)
         public async Task LogAsync(ClaimsPrincipal user, string action, string entityName, string entityId, string details)
         {
-            // Ambil userId dari token (claim nameid)
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userEmail = user.FindFirstValue(ClaimTypes.Email)
+                           ?? user.Identity?.Name
+                           ?? "unknown@system.local";
 
-            // Fallback kalau tidak ada → pakai email/username
-            if (string.IsNullOrEmpty(userId))
-            {
-                userId = user.Identity?.Name ?? "Unknown";
-            }
-
-            // Waktu Indonesia (WIB = GMT+7)
             var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
                 DateTime.UtcNow,
                 TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
@@ -32,12 +27,37 @@ namespace WebArsip.Infrastructure.Services
 
             var log = new AuditLog
             {
-                UserId = userId,
+                UserId = userEmail, // <-- gunakan Email sebagai ID
                 Action = action,
                 EntityName = entityName,
                 EntityId = entityId,
                 Timestamp = wibNow,
                 Details = details
+            };
+
+            _context.AuditLogs.Add(log);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task LogPermissionDeniedAsync(ClaimsPrincipal user, string action, string entityName, string entityId, string reason)
+        {
+            var userEmail = user.FindFirstValue(ClaimTypes.Email)
+                           ?? user.Identity?.Name
+                           ?? "unknown@system.local";
+
+            var wibNow = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")
+            );
+
+            var log = new AuditLog
+            {
+                UserId = userEmail,
+                Action = $"DENIED_{action.ToUpper()}",
+                EntityName = entityName,
+                EntityId = entityId,
+                Timestamp = wibNow,
+                Details = $"Access denied for {userEmail}: {reason}"
             };
 
             _context.AuditLogs.Add(log);

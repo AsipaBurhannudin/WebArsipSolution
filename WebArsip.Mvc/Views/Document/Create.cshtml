@@ -1,125 +1,107 @@
-﻿@using WebArsip.Mvc.Models.ViewModels
-@model DocumentViewModel
+﻿@model WebArsip.Mvc.Models.ViewModels.DocumentViewModel
+
 @{
-    ViewData["Title"] = "Create Document";
+    ViewData["Title"] = "➕ Add New Document";
     Layout = "_LayoutPrivate";
 }
 
-<h2>➕ Create Document</h2>
+<link rel="stylesheet" href="~/css/document/form.css" />
 
-<form id="createDocForm" enctype="multipart/form-data">
-    <div class="mb-3">
-        <label for="Title" class="form-label">Title</label>
-        <input asp-for="Title" class="form-control" required />
+<div class="container mt-5 mb-5 document-create-container">
+    <div class="card glass-card shadow-lg p-4">
+        <h3 class="fw-semibold text-center text-gradient mb-4">
+            <i class="bi bi-plus-circle"></i> Add New Document
+        </h3>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <!-- Title -->
+            <div class="mb-3">
+                <label class="form-label text-light">Document Title</label>
+                <input asp-for="Title" class="form-control form-control-lg text-light bg-transparent border-light" placeholder="Enter document title..." required />
+                <div class="invalid-feedback text-warning">Please enter the document title.</div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label text-light">Description</label>
+                <textarea asp-for="Description" class="form-control text-light bg-transparent border-light" rows="3" placeholder="Describe your document..." required></textarea>
+                <div class="invalid-feedback text-warning">Description cannot be empty.</div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="mb-4">
+                <label class="form-label text-light">Upload File</label>
+                <input type="file" name="FileUpload" class="form-control bg-transparent text-light border-light" accept=".pdf,.doc,.docx,.xls,.xlsx" required />
+                <div class="form-text text-secondary">
+                    Hanya untuk format : PDF, Word (.doc, .docx), Excel (.xls, .xlsx)
+                </div>
+                <div class="invalid-feedback text-warning">Please upload a valid document file.</div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-4">
+                <label class="form-label text-light">Status</label>
+                <select asp-for="Status" class="form-select bg-transparent text-light border-light" required>
+                    <option value="Draft" class="text-dark">Draft</option>
+                    <option value="Published" class="text-dark">Published</option>
+                </select>
+                <div class="invalid-feedback text-warning">Please select a status.</div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-glass px-4 rounded-pill">
+                    <i class="bi bi-cloud-upload"></i> Upload Document
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="mb-3">
-        <label for="Description" class="form-label">Description</label>
-        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label for="FileUpload" class="form-label">Upload File (Word/Excel/PDF)</label>
-        <input type="file" name="FileUpload" class="form-control"
-               accept=".doc,.docx,.xls,.xlsx,.pdf" required />
-    </div>
-
-    <div class="progress mb-3" style="height: 25px; display: none;">
-        <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated"
-             role="progressbar" style="width: 0%">
-            0%
-        </div>
-    </div>
-
-    <div class="mb-3">
-        <label for="Status" class="form-label">Status</label>
-        <select asp-for="Status" class="form-select">
-            <option value="Draft">Draft</option>
-            <option value="Published">Published</option>
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-success">💾 Save</button>
-    <a asp-action="Index" class="btn btn-secondary">🔙 Back</a>
-</form>
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const form = document.getElementById("createDocForm");
-            const fileInput = form.querySelector("input[name='FileUpload']");
-            const progressBarContainer = document.querySelector(".progress");
-            const progressBar = document.getElementById("uploadProgress");
-            const allowedExts = [".doc", ".docx", ".xls", ".xlsx", ".pdf"];
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
 
-            fileInput.addEventListener("change", function () {
-                const fileName = this.files[0]?.name || "";
-                const ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
+            if (success && success !== "") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else if (error && error !== "") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed!",
+                    text: error,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
 
-                if (!allowedExts.includes(ext)) {
-                    Swal.fire({
-                        icon: "error",
-                        title: "File tidak valid!",
-                        text: "Hanya file Word, Excel, atau PDF yang diperbolehkan.",
-                        confirmButtonColor: "#d33"
-                    });
-                    this.value = "";
-                    return;
-                }
-            });
-
-            form.addEventListener("submit", async function (e) {
-                e.preventDefault();
-
-                const formData = new FormData(form);
-                const file = fileInput.files[0];
-                if (!file) {
-                    Swal.fire({ icon: "error", title: "Gagal", text: "Silakan pilih file terlebih dahulu." });
-                    return;
-                }
-
-                progressBarContainer.style.display = "block";
-                progressBar.style.width = "0%";
-                progressBar.textContent = "0%";
-
-                try {
-                    const xhr = new XMLHttpRequest();
-                    xhr.open("POST", "/Document/Create", true);
-
-                    xhr.upload.addEventListener("progress", function (e) {
-                        if (e.lengthComputable) {
-                            const percent = Math.round((e.loaded / e.total) * 100);
-                            progressBar.style.width = percent + "%";
-                            progressBar.textContent = percent + "%";
-                        }
-                    });
-
-                    xhr.onload = function () {
-                        if (xhr.status === 200 || xhr.status === 302) {
-                            Swal.fire({
-                                icon: "success",
-                                title: "Berhasil!",
-                                text: "Dokumen berhasil diupload!",
-                                timer: 2000,
-                                showConfirmButton: false
-                            }).then(() => {
-                                window.location.href = "/Document/Index";
-                            });
-                        } else {
-                            Swal.fire({ icon: "error", title: "Gagal", text: "Upload dokumen gagal." });
-                            progressBarContainer.style.display = "none";
-                        }
-                    };
-
-                    xhr.onerror = function () {
-                        Swal.fire({ icon: "error", title: "Gagal", text: "Terjadi kesalahan jaringan." });
-                        progressBarContainer.style.display = "none";
-                    };
-
-                    xhr.send(formData);
-                } catch (error) {
-                    Swal.fire({ icon: "error", title: "Error", text: "Terjadi error tidak diketahui." });
-                }
+            // ✅ Bootstrap validation
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Invalid!',
+                            text: 'Please check the form and try again.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                    form.classList.add('was-validated');
+                }, false);
             });
         });
     </script>

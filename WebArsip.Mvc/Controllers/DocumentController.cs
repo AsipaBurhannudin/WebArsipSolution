@@ -14,7 +14,6 @@ namespace WebArsip.Mvc.Controllers
             _clientFactory = clientFactory;
         }
 
-        // 🔹 Helper untuk membuat HttpClient dengan JWT
         private HttpClient CreateClient()
         {
             var client = _clientFactory.CreateClient("WebArsipApi");
@@ -24,7 +23,7 @@ namespace WebArsip.Mvc.Controllers
             return client;
         }
 
-        // 🔹 List dokumen
+        // 📄 Index — List Document
         public async Task<IActionResult> Index()
         {
             var client = CreateClient();
@@ -41,11 +40,11 @@ namespace WebArsip.Mvc.Controllers
             return View(paged?.Items ?? new List<DocumentViewModel>());
         }
 
-        // 🔹 Create GET
+        // ➕ Create GET
         [HttpGet]
         public IActionResult Create() => View();
 
-        // 🔹 Create POST
+        // ➕ Create POST
         [HttpPost]
         public async Task<IActionResult> Create(DocumentViewModel model, IFormFile FileUpload)
         {
@@ -92,21 +91,7 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🔹 Detail Dokumen
-        [HttpGet]
-        public async Task<IActionResult> Details(int id)
-        {
-            var client = CreateClient();
-            var response = await client.GetAsync($"document/{id}");
-            if (!response.IsSuccessStatusCode)
-                return RedirectToAction(nameof(Index));
-
-            var body = await response.Content.ReadAsStringAsync();
-            var doc = JsonConvert.DeserializeObject<DocumentViewModel>(body);
-            return View(doc);
-        }
-
-        // 🔹 Edit GET
+        // ✏️ Edit GET
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -119,7 +104,7 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
-        // 🔹 Edit POST
+        // ✏️ Edit POST
         [HttpPost]
         public async Task<IActionResult> Edit(DocumentViewModel model, IFormFile? FileUpload)
         {
@@ -127,7 +112,7 @@ namespace WebArsip.Mvc.Controllers
 
             var client = CreateClient();
 
-            // Ambil data lama dari API
+            // Ambil data lama
             DocumentViewModel? oldDoc = null;
             var existingResponse = await client.GetAsync($"document/{model.DocId}");
             if (existingResponse.IsSuccessStatusCode)
@@ -136,7 +121,6 @@ namespace WebArsip.Mvc.Controllers
                 oldDoc = JsonConvert.DeserializeObject<DocumentViewModel>(oldData);
             }
 
-            // 🔹 File Handling
             if (FileUpload != null && FileUpload.Length > 0)
             {
                 var ext = Path.GetExtension(FileUpload.FileName).ToLowerInvariant();
@@ -163,30 +147,8 @@ namespace WebArsip.Mvc.Controllers
             }
             else if (oldDoc != null)
             {
-                // 🔹 Tidak upload baru → tetap pakai file lama
                 model.FilePath = oldDoc.FilePath;
                 model.OriginalFileName = oldDoc.OriginalFileName;
-            }
-
-            // 🔹 Sinkronkan status dan versi
-            if (oldDoc != null)
-            {
-                if (oldDoc.Status == "Published" && model.Status == "Published")
-                {
-                    // kalau user tetap pilih Published padahal udah published → anggap revisi
-                    model.Status = "Updated";
-                    model.Version = oldDoc.Version + 1;
-                }
-                else if (oldDoc.Status == "Updated" && model.Status == "Published")
-                {
-                    // kalau user publish lagi setelah updated → tetap updated tapi naik versi
-                    model.Status = "Updated";
-                    model.Version = oldDoc.Version + 1;
-                }
-                else
-                {
-                    model.Version = oldDoc.Version;
-                }
             }
 
             var response = await client.PutAsJsonAsync($"document/{model.DocId}", model);
@@ -196,11 +158,11 @@ namespace WebArsip.Mvc.Controllers
                 return View(model);
             }
 
-            TempData["Success"] = $"Dokumen berhasil diperbarui ke versi v{model.Version}!";
+            TempData["Success"] = "Dokumen berhasil diperbarui!";
             return RedirectToAction(nameof(Index));
         }
 
-        // 🔹 Delete
+        // 🗑️ Delete
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -213,12 +175,12 @@ namespace WebArsip.Mvc.Controllers
             return Json(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
-        // 🔹 Download
+        // ⬇️ Download
         [HttpGet]
         public async Task<IActionResult> Download(int id)
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"document/stream/{id}");
+            var response = await client.GetAsync($"document/download/{id}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -233,12 +195,12 @@ namespace WebArsip.Mvc.Controllers
             return File(stream, contentType, fileName);
         }
 
-        // 🔹 Preview
+        // 👁 Preview
         [HttpGet]
         public async Task<IActionResult> Preview(int id)
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"document/preview/{id}");
+            var response = await client.GetAsync($"document/stream/{id}");
             if (!response.IsSuccessStatusCode) return NotFound();
 
             var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
@@ -249,7 +211,7 @@ namespace WebArsip.Mvc.Controllers
             return File(stream, contentType);
         }
 
-        // 🔹 Pagination Helper
+        // Helper class
         public class PagedResult<T>
         {
             public int Page { get; set; }

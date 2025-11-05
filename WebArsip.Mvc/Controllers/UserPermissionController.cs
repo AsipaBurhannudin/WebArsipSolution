@@ -1,12 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using System.Net.Http.Headers;
+using Newtonsoft.Json.Linq;
 using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {
-    [Authorize(Roles = "Admin")]
     public class UserPermissionController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -21,157 +19,173 @@ namespace WebArsip.Mvc.Controllers
             var client = _clientFactory.CreateClient("WebArsipApi");
             var token = HttpContext.Session.GetString("JWToken");
             if (!string.IsNullOrEmpty(token))
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+                client.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
             return client;
         }
 
-        // GET: /UserPermission
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 20)
+        // ✅ Index Page (list all user permissions)
+        public async Task<IActionResult> Index()
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"/api/UserPermission?page={page}&pageSize={pageSize}");
-
+            var response = await client.GetAsync("userpermission");
             if (!response.IsSuccessStatusCode)
-            {
-                TempData["Error"] = "Gagal memuat data UserPermission.";
                 return View(new List<UserPermissionViewModel>());
-            }
 
             var body = await response.Content.ReadAsStringAsync();
-            var paged = JsonConvert.DeserializeObject<PagedResult<UserPermissionViewModel>>(body);
-
-            return View(paged?.Items ?? new List<UserPermissionViewModel>());
+            var data = JsonConvert.DeserializeObject<List<UserPermissionViewModel>>(body);
+            return View(data ?? new List<UserPermissionViewModel>());
         }
 
-        // GET: /UserPermission/Create
+        // ✅ Create (GET)
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            await PopulateDropdowns();
+            var client = CreateClient();
+
+            // ---- Get Users ----
+            var userResp = await client.GetAsync("user");
+            var users = new List<UserViewModel>();
+
+            if (userResp.IsSuccessStatusCode)
+            {
+                var json = await userResp.Content.ReadAsStringAsync();
+                users = TryExtractList<UserViewModel>(json);
+            }
+
+            ViewBag.Users = users.Select(u => new
+            {
+                Email = u.Email,
+                DisplayName = string.IsNullOrEmpty(u.Name)
+                    ? u.Email
+                    : $"{u.Name} ({u.Email})"
+            }).ToList();
+
+            // ---- Get Documents ----
+            var docResp = await client.GetAsync("document");
+            var docs = new List<DocumentViewModel>();
+
+            if (docResp.IsSuccessStatusCode)
+            {
+                var json = await docResp.Content.ReadAsStringAsync();
+                docs = TryExtractList<DocumentViewModel>(json);
+            }
+
+            ViewBag.Documents = docs;
+
             return View();
         }
 
-        // POST: /UserPermission/Create
+        // ✅ Create (POST)
         [HttpPost]
-        public async Task<IActionResult> Create(UserPermissionCreateViewModel model)
+        public async Task<IActionResult> Create(UserPermissionViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                await PopulateDropdowns();
-                return View(model);
-            }
-
             var client = CreateClient();
-            var response = await client.PostAsJsonAsync("UserPermission", model);
+
+            var payload = new
+            {
+                UserEmail = model.UserEmail,
+                DocId = model.DocId,
+                CanView = model.CanView,
+                CanEdit = model.CanEdit,
+                CanDelete = model.CanDelete,
+                CanUpload = model.CanUpload,
+                CanDownload = model.CanDownload
+            };
+
+            var response = await client.PostAsJsonAsync("userpermission", payload);
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = "Gagal menambahkan UserPermission.";
-                await PopulateDropdowns();
-                return View(model);
+                TempData["ErrorUP"] = "Gagal menambahkan User Permission. Pastikan kombinasi user dan dokumen belum ada.";
+                return RedirectToAction(nameof(Create));
             }
 
-            TempData["Success"] = "UserPermission berhasil ditambahkan!";
+            TempData["SuccessUP"] = "User Permission berhasil ditambahkan!";
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: /UserPermission/Edit/5
+        // ✅ Edit (GET)
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            await PopulateDropdowns();
-
             var client = CreateClient();
-            var response = await client.GetAsync($"UserPermission/{id}");
-            if (!response.IsSuccessStatusCode) return RedirectToAction(nameof(Index));
+            var response = await client.GetAsync($"userpermission");
+            if (!response.IsSuccessStatusCode) return NotFound();
 
             var body = await response.Content.ReadAsStringAsync();
-            var up = JsonConvert.DeserializeObject<UserPermissionEditViewModel>(body);
+            var list = JsonConvert.DeserializeObject<List<UserPermissionViewModel>>(body);
+            var model = list?.FirstOrDefault(p => p.Id == id);
 
-            return View(up);
+            if (model == null) return NotFound();
+            return View(model);
         }
 
-        // POST: /UserPermission/Edit
+        // ✅ Edit (POST)
         [HttpPost]
-        public async Task<IActionResult> Edit(UserPermissionEditViewModel model)
+        public async Task<IActionResult> Edit(UserPermissionViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                await PopulateDropdowns();
-                return View(model);
-            }
-
             var client = CreateClient();
-            var response = await client.PutAsJsonAsync($"UserPermission/{model.UserPermissionId}", model);
+            var payload = new
+            {
+                model.DocId,
+                model.UserEmail,
+                model.CanView,
+                model.CanEdit,
+                model.CanDelete,
+                model.CanUpload,
+                model.CanDownload
+            };
+
+            var response = await client.PutAsJsonAsync($"userpermission/{model.Id}", payload);
 
             if (!response.IsSuccessStatusCode)
             {
-                TempData["Error"] = "Gagal mengedit UserPermission.";
-                await PopulateDropdowns();
-                return View(model);
+                TempData["ErrorUP"] = "Gagal memperbarui permission.";
+                return RedirectToAction(nameof(Edit), new { id = model.Id });
             }
 
-            TempData["Success"] = "UserPermission berhasil diperbarui!";
+            TempData["SuccessUP"] = "User Permission berhasil diperbarui!";
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /UserPermission/Delete
+
+        // ✅ Delete
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
             var client = CreateClient();
-            var response = await client.DeleteAsync($"UserPermission/{id}");
+            var response = await client.DeleteAsync($"userpermission/{id}");
 
             if (!response.IsSuccessStatusCode)
-                return Json(new { success = false, message = "Gagal menghapus UserPermission." });
+                return Json(new { success = false, message = "Gagal menghapus user permission." });
 
-            return Json(new { success = true, message = "UserPermission berhasil dihapus!" });
+            return Json(new { success = true, message = "User permission berhasil dihapus!" });
         }
 
-        // Helper untuk dropdown (User + Document)
-        private async Task PopulateDropdowns()
+        // 🔧 Utility untuk ekstraksi array dari JSON (paged atau tidak)
+        private static List<T> TryExtractList<T>(string json)
         {
-            var client = CreateClient();
-
-            // Get users
-            var userResp = await client.GetAsync("User?page=1&pageSize=100");
-            var users = new List<UserViewModel>();
-            if (userResp.IsSuccessStatusCode)
+            try
             {
-                var body = await userResp.Content.ReadAsStringAsync();
-                var paged = JsonConvert.DeserializeObject<PagedResult<UserViewModel>>(body);
-                users = paged?.Items ?? new List<UserViewModel>();
+                if (json.TrimStart().StartsWith("["))
+                {
+                    // langsung array
+                    return JsonConvert.DeserializeObject<List<T>>(json) ?? new();
+                }
+
+                var obj = JObject.Parse(json);
+                if (obj["items"] != null && obj["items"].Type == JTokenType.Array)
+                {
+                    return obj["items"]!.ToObject<List<T>>() ?? new();
+                }
             }
-            ViewBag.Users = users.Select(u => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            catch
             {
-                Value = u.UserId.ToString(),
-                Text = $"{u.Name} ({u.Email})"
-            }).ToList();
-
-            // Get documents
-            var docResp = await client.GetAsync("Document?page=1&pageSize=100");
-            var docs = new List<DocumentViewModel>();
-            if (docResp.IsSuccessStatusCode)
-            {
-                var body = await docResp.Content.ReadAsStringAsync();
-                var pagedDocs = JsonConvert.DeserializeObject<PagedResult<DocumentViewModel>>(body);
-                docs = pagedDocs?.Items ?? new();
+                // fallback aman
             }
-            ViewBag.Documents = docs.Select(d => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
-            {
-                Value = d.DocId.ToString(),
-                Text = d.Title
-            }).ToList();
-        }
 
-        // PagedResult generic
-        public class PagedResult<T>
-        {
-            public int Page { get; set; }
-            public int PageSize { get; set; }
-            public int TotalCount { get; set; }
-            public List<T> Items { get; set; } = new();
+            return new List<T>();
         }
     }
 }
