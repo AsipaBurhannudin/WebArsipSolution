@@ -19,6 +19,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogService>();
 builder.Services.AddScoped<PermissionService, PermissionService>();
 
+builder.Services.AddMemoryCache();
+builder.Services.AddLogging();
+
 // ✅ Identity (ubah dari AddIdentityCore → AddIdentity)
 builder.Services.AddIdentity<User, Role>(options =>
 {

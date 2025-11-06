@@ -6,6 +6,7 @@
 }
 
 <!-- CSS -->
+<link rel="stylesheet" href="~/css/document/index.css" />
 <link rel="stylesheet" href="~/css/user-permission/index.css" />
 <link rel="stylesheet" href="~/css/theme/datatables-theme.css" />
 <link href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" rel="stylesheet" />
@@ -16,12 +17,17 @@
          data-success="@TempData["SuccessUP"]"
          data-error="@TempData["ErrorUP"]">
     </div>
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-semibold"><i class="bi bi-people-fill"></i> User Permissions</h3>
-        <a asp-action="Create" class="btn btn-primary btn-glass">
-            <i class="bi bi-plus-circle"></i> Add Permission
-        </a>
-    </div>
+
+    <div class="container mt-5 mb-5 document-container fade-in">
+        <div class="card glass-card shadow-lg border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-semibold text-gradient">
+                    <i class="bi bi-file-person-fill"></i>  User Permission
+                </h3>
+                <a asp-action="Create" class="btn btn-primary btn-glass px-4 rounded-pill">
+                    <i class="bi bi-plus-circle"></i> Add Permission
+                </a>
+            </div>
 
     <div class="table-responsive shadow-sm rounded-3">
         <table id="userPermissionTable" class="table table-striped table-hover align-middle mb-0">

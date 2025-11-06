@@ -3,7 +3,23 @@
 @{
     var email = UserRoleHelper.GetUserEmail(Context) ?? "Unknown";
     var menus = SidebarHelper.GetAccessibleMenus(Context);
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Dashboard";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+
+    // Opsional: bikin label yang lebih rapi untuk tampil di navbar
+    string pageTitle = currentController switch
+    {
+        "Document" => "Dokumen",
+        "User" => "Pengguna",
+        "Permission" => "Hak Akses",
+        "Role" => "Peran",
+        "UserPermission" => "Hak Akses User",
+        "AuditLog" => "Log Aktifitas",
+        "Archive" => "Arsip",
+        _ => currentController
+    };
 }
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +30,7 @@
     <meta name="TempData-Success" content="@TempData["Success"]" />
     <meta name="TempData-Error" content="@TempData["Error"]" />
 
-    <!-- Core CSS -->
+    <!-- 🔹 Core CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/layout-private.css" />
     <link rel="stylesheet" href="~/css/permission/create-permission.css" />
@@ -22,41 +38,41 @@
     <script src="https://kit.fontawesome.com/a2e0ef5b12.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
+<body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
+      data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
     <div id="wrapper" class="d-flex">
-        <!-- 🔹 SIDEBAR -->
+        <!-- 🟣 SIDEBAR -->
         <nav id="sidebar-wrapper">
             <div class="sidebar-heading text-center py-3">
-                📂 <strong>WebArsip JLM</strong>
+                <i class="fa-solid fa-box-archive me-2 text-info"></i> <strong>WebArsip JLM</strong>
             </div>
 
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush mt-3">
                 @foreach (var menu in menus)
                 {
                     var isActive = ViewContext.RouteData.Values["controller"]?.ToString() == menu.Controller ? "active" : "";
                     <a asp-controller="@menu.Controller" asp-action="Index"
                        class="list-group-item list-group-item-action @isActive">
-                        @menu.Label
+                        <i class="@menu.Icon me-2"></i> @menu.Label
                     </a>
                 }
             </div>
         </nav>
 
-        <!-- 🔹 MAIN CONTENT -->
+        <!-- 🔹 PAGE CONTENT -->
         <div id="page-content-wrapper" class="flex-fill">
-            <!-- 🔸 NAVBAR -->
-            <nav class="navbar navbar-expand-lg navbar-dark">
+            <!-- 🔸 NAVBAR (sticky) -->
+            <nav class="navbar navbar-expand-lg navbar-dark sticky-top px-4 py-3">
                 <div class="d-flex align-items-center">
-                    <!-- Toggle Icon (morph ☰ / ✕) -->
-                    <button id="menu-toggle" type="button">
+                    <button id="menu-toggle" type="button" title="Toggle Sidebar">
                         <span class="toggle-icon"></span>
                     </button>
-                    <span class="navbar-brand fw-semibold ms-2">Dashboard</span>
+                    <span id="navbar-page-title" class="navbar-brand fw-semibold ms-2">@pageTitle</span>
                 </div>
 
-                <!-- Profile Dropdown -->
+
                 <div class="ms-auto d-flex align-items-center">
-                    <div class="profile-dropdown position-relative me-2">
+                    <div class="profile-dropdown position-relative">
                         <img id="profile-icon" src="~/images/avatar-default.png" alt="Profile" />
                         <div id="profile-menu" class="profile-menu">
                             <a href="#"><i class="fas fa-user-circle me-2 text-primary"></i> Profil</a>
@@ -67,18 +83,17 @@
                             </form>
                         </div>
                     </div>
-
                 </div>
             </nav>
 
-            <!-- 🔸 CONTENT -->
-            <main class="container-fluid mt-4 mb-5 dashboard-wrapper">
+            <!-- 🔸 MAIN CONTENT -->
+            <main class="container-fluid py-4 px-4 dashboard-wrapper">
                 @RenderBody()
             </main>
         </div>
     </div>
 
-    <!-- JS -->
+    <!-- 🔹 Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/alert-handler.js"></script>

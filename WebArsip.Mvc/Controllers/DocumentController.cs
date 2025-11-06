@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System.Net.Http.Headers;
 using WebArsip.Mvc.Models.ViewModels;
 
 namespace WebArsip.Mvc.Controllers
 {
+    [Authorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public class DocumentController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -23,12 +26,33 @@ namespace WebArsip.Mvc.Controllers
             return client;
         }
 
-        // 📄 Index — List Document
+        // 📄 INDEX — List Document + Check Permission
         public async Task<IActionResult> Index()
         {
             var client = CreateClient();
-            var response = await client.GetAsync("document?page=1&pageSize=100");
 
+            var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+            // 🔹 Ambil permission user dari API
+            var permResponse = await client.GetAsync($"permission/check?email={email}&role={role}");
+            if (permResponse.IsSuccessStatusCode)
+            {
+                var permJson = await permResponse.Content.ReadAsStringAsync();
+                dynamic p = JsonConvert.DeserializeObject(permJson)!;
+                ViewBag.CanView = (bool?)p?.CanView ?? false;
+                ViewBag.CanEdit = (bool?)p?.CanEdit ?? false;
+                ViewBag.CanDelete = (bool?)p?.CanDelete ?? false;
+                ViewBag.CanUpload = (bool?)p?.CanUpload ?? false;
+                ViewBag.CanDownload = (bool?)p?.CanDownload ?? false;
+            }
+            else
+            {
+                ViewBag.CanView = ViewBag.CanEdit = ViewBag.CanDelete = ViewBag.CanUpload = ViewBag.CanDownload = false;
+            }
+
+            // 🔹 Ambil data dokumen
+            var response = await client.GetAsync("document?page=1&pageSize=100");
             if (!response.IsSuccessStatusCode)
             {
                 TempData["Error"] = "Gagal mengambil data dokumen.";
@@ -40,11 +64,11 @@ namespace WebArsip.Mvc.Controllers
             return View(paged?.Items ?? new List<DocumentViewModel>());
         }
 
-        // ➕ Create GET
+        // ➕ CREATE — GET
         [HttpGet]
         public IActionResult Create() => View();
 
-        // ➕ Create POST
+        // ➕ CREATE — POST
         [HttpPost]
         public async Task<IActionResult> Create(DocumentViewModel model, IFormFile FileUpload)
         {
@@ -91,7 +115,7 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ✏️ Edit GET
+        // ✏️ EDIT — GET
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
@@ -104,7 +128,7 @@ namespace WebArsip.Mvc.Controllers
             return View(doc);
         }
 
-        // ✏️ Edit POST
+        // ✏️ EDIT — POST
         [HttpPost]
         public async Task<IActionResult> Edit(DocumentViewModel model, IFormFile? FileUpload)
         {
@@ -112,7 +136,6 @@ namespace WebArsip.Mvc.Controllers
 
             var client = CreateClient();
 
-            // Ambil data lama
             DocumentViewModel? oldDoc = null;
             var existingResponse = await client.GetAsync($"document/{model.DocId}");
             if (existingResponse.IsSuccessStatusCode)
@@ -162,7 +185,7 @@ namespace WebArsip.Mvc.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🗑️ Delete
+        // 🗑 DELETE
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
@@ -175,7 +198,7 @@ namespace WebArsip.Mvc.Controllers
             return Json(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
-        // ⬇️ Download
+        // ⬇ DOWNLOAD
         [HttpGet]
         public async Task<IActionResult> Download(int id)
         {
@@ -195,13 +218,17 @@ namespace WebArsip.Mvc.Controllers
             return File(stream, contentType, fileName);
         }
 
-        // 👁 Preview
+        // 👁 PREVIEW
         [HttpGet]
         public async Task<IActionResult> Preview(int id)
         {
             var client = CreateClient();
-            var response = await client.GetAsync($"document/stream/{id}");
-            if (!response.IsSuccessStatusCode) return NotFound();
+            var response = await client.GetAsync($"document/preview/{id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "Tidak memiliki izin untuk melihat dokumen ini.";
+                return RedirectToAction(nameof(Index));
+            }
 
             var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "file";
             var stream = await response.Content.ReadAsStreamAsync();

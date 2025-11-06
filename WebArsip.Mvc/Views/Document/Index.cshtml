@@ -26,6 +26,7 @@
                         <th>No</th>
                         <th>Title</th>
                         <th>Description</th>
+                        <th>Created By</th>
                         <th>Created At</th>
                         <th>Status</th>
                         <th>Version</th>
@@ -41,6 +42,7 @@
                                 <td></td>
                                 <td>@doc.Title</td>
                                 <td>@doc.Description</td>
+                                <td>@doc.CreatedBy</td>
                                 <td>@doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
                                     <span class="badge bg-@(doc.Status == "Published" ? "success" : "warning") px-3 py-2">
@@ -87,7 +89,7 @@
     </div>
 </div>
 
-<!-- ✅ Preview Modal -->
+<!-- Preview Modal -->
 <div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content glass-card text-light fade-in">
@@ -112,7 +114,7 @@
     {
         <text>
             <script>
-                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '@TempData["Success"]', showConfirmButton: false, timer: 2000 });
+                Swal.fire({ toast: true, icon: 'success', title: '@TempData["Success"]', position: 'top-end', showConfirmButton: false, timer: 2000 });
             </script>
         </text>
     }
@@ -120,7 +122,7 @@
     {
         <text>
             <script>
-                Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: '@TempData["Error"]', showConfirmButton: false, timer: 2000 });
+                Swal.fire({ toast: true, icon: 'error', title: '@TempData["Error"]', position: 'top-end', showConfirmButton: false, timer: 2000 });
             </script>
         </text>
     }

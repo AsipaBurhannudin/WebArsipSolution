@@ -4,7 +4,8 @@
     <title>@ViewData["Title"] - WebArsip</title>
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
-<body>
+<body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
+      data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
     <div class="container mt-5">
         @RenderBody()
     </div>

@@ -11,5 +11,6 @@
         public string Status { get; set; } = "Active";
         public int Version { get; set; }
         public string? OriginalFileName { get; set; }
+        public string? CreatedBy { get; set; }
     }
 }

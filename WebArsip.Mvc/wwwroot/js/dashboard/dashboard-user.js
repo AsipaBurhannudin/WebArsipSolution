@@ -53,8 +53,8 @@
             fetchJson("Dashboard/user-activity?days=7")
         ]);
 
-        animateCount(document.getElementById("userDocCount"), counts.Documents);
-        animateCount(document.getElementById("userLogCount"), counts.AuditLogs);
+        animateCount(document.getElementById("userDocCount"), counts.documents);
+        animateCount(document.getElementById("userLogCount"), counts.auditLogs);
 
         document.querySelectorAll(".count-value").forEach(fadeIn);
 

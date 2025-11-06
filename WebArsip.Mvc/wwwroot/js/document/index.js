@@ -112,4 +112,32 @@
         $("#previewFrame").attr("src", srcUrl);
         $("#previewModal").modal("show");
     });
+
+    // ✅ PERMISSION AUTO-REFRESH (tombol action auto-hide)
+    async function refreshUserPermissions() {
+        try {
+            const email = $('body').data('user-email');
+            const role = $('body').data('user-role');
+            const token = sessionStorage.getItem('JWToken') || localStorage.getItem('JWToken');
+
+            if (!email || !role) return;
+
+            const res = await fetch(`/api/permission/check?email=${email}&role=${role}`);
+
+            if (!res.ok) return;
+
+            const p = await res.json();
+
+            if (!p.CanEdit) $(".btn-warning").hide();
+            if (!p.CanDelete) $(".btn-danger").hide();
+            if (!p.CanView) $(".btn-info").hide();
+            if (!p.CanDownload) $(".btn-secondary").hide();
+            if (!p.CanUpload) $("a[href$='Create']").hide();
+        } catch (err) {
+            console.error("Permission refresh failed:", err);
+        }
+    }
+
+    // 🔁 Jalankan otomatis setelah 2 detik (biar DOM siap)
+    setTimeout(refreshUserPermissions, 2000);
 });

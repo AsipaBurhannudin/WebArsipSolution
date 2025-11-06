@@ -64,6 +64,7 @@
             "countUsers": counts.Users || counts.users || 0,
             "countRoles": counts.Roles || counts.roles || 0,
             "countPermissions": counts.Permissions || counts.permissions || 0,
+            "countUserPermissions": counts.UserPermissions || counts.userPermissions || 0, // ✅ baru
             "countAuditLogs": counts.AuditLogs || counts.auditLogs || 0
         };
 
@@ -82,15 +83,16 @@
         new Chart(pieCtx, {
             type: "pie",
             data: {
-                labels: ["Documents", "Users", "Roles", "Permissions", "Audit Logs"],
+                labels: ["Documents", "Users", "Roles", "Permissions", "User Permissions", "Audit Logs"],
                 datasets: [{
                     data: Object.values(mapping),
                     backgroundColor: [
-                        "rgba(54, 162, 235, 0.75)",
-                        "rgba(75, 192, 192, 0.75)",
-                        "rgba(255, 206, 86, 0.75)",
-                        "rgba(255, 99, 132, 0.75)",
-                        "rgba(153, 102, 255, 0.75)"
+                        "rgba(54, 162, 235, 0.75)",   // Documents
+                        "rgba(75, 192, 192, 0.75)",   // Users
+                        "rgba(255, 206, 86, 0.75)",   // Roles
+                        "rgba(255, 99, 132, 0.75)",   // Permissions
+                        "rgba(55, 112, 219, 0.33)",  // User Permissions 💜
+                        "rgba(153, 102, 255, 0.75)"   // Audit Logs
                     ],
                     borderColor: "#fff",
                     borderWidth: 2

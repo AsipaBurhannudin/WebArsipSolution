@@ -23,19 +23,46 @@ namespace WebArsip.Api.Controllers
         public async Task<IActionResult> GetCounts()
         {
             var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value ?? "User";
+            var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value ?? string.Empty;
+
+            if (string.IsNullOrEmpty(userEmail))
+                return Forbid();
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+            if (user == null)
+                return NotFound("User tidak ditemukan");
+
+            // 🔹 Query dasar sesuai role
+            var documentQuery = _context.Documents.AsQueryable();
+            var auditLogQuery = _context.AuditLogs.AsQueryable();
+
+            if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                // Jika bukan admin → hanya lihat miliknya
+                documentQuery = documentQuery.Where(d => d.CreatedBy == user.Id.ToString());
+                auditLogQuery = auditLogQuery.Where(a => a.UserId == user.Id.ToString());
+            }
 
             var result = new
             {
-                Documents = await _context.Documents.CountAsync(),
-                Users = await _context.Users.CountAsync(),
-                Roles = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                    ? await _context.Roles.CountAsync()
-                    : 0,
-                Permissions = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                    ? await _context.Permissions.CountAsync()
-                    : 0,
-                AuditLogs = await _context.AuditLogs.CountAsync()
-            };
+                Documents = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+               ? await _context.Documents.CountAsync()
+               : await _context.Documents.Where(d => d.CreatedBy == userEmail).CountAsync(),
+
+                    Users = await _context.Users.CountAsync(),
+                    Roles = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+               ? await _context.Roles.CountAsync()
+               : 0,
+                    Permissions = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+               ? await _context.Permissions.CountAsync()
+               : 0,
+                    AuditLogs = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+               ? await _context.AuditLogs.CountAsync()
+               : await _context.AuditLogs.Where(l => l.UserId == userEmail || l.UserId == userEmail.ToLower()).CountAsync(),
+                    UserPermissions = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+               ? await _context.UserPermissions.CountAsync()
+               : 0
+                };
 
             return Ok(result);
         }
