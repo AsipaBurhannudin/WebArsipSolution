@@ -183,6 +183,32 @@ namespace WebArsip.Mvc.Controllers
             return Json(new { success = true, message = "User berhasil dihapus!" });
         }
 
+        [HttpGet]
+        public IActionResult ResetPassword(int id)
+        {
+            return View(new ResetPasswordViewModel { UserId = id });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            var client = CreateClient();
+
+            var response = await client.PostAsJsonAsync(
+                $"user/reset-password/{model.UserId}",
+                new { NewPassword = model.NewPassword }
+            );
+
+            if (!response.IsSuccessStatusCode)
+            {
+                TempData["Error"] = "Gagal mereset password!";
+                return View(model);
+            }
+
+            TempData["Success"] = "Password berhasil direset!";
+            return RedirectToAction(nameof(Index));
+        }
+
         public class PagedResult<T>
         {
             public int Page { get; set; }

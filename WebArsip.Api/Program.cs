@@ -98,12 +98,14 @@ builder.Logging.AddConsole();
 // ✅ CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowMvc",
-        policy => policy
-            .WithOrigins("http://localhost:5077")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials());
+    options.AddPolicy("AllowNgrok", policy =>
+        policy.WithOrigins(
+            "https://nongrounded-nonrefuelling-kizzy.ngrok-free.dev", // URL ngrok kamu
+            "http://localhost:5077", // MVC local
+            "https://localhost:7237"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod());
 });
 
 // ✅ Build App
@@ -173,7 +175,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseCors("AllowMvc");
+app.UseCors("AllowNgrok");
 
 app.UseAuthentication();
 app.UseAuthorization();

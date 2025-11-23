@@ -161,5 +161,21 @@ namespace WebArsip.Api.Controllers
             return Ok(count);
         }
 
+        [HttpPost("reset-password/{id}")]
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordDto dto)
+        {
+            var user = await _userManager.FindByIdAsync(id.ToString());
+            if (user == null) return NotFound();
+
+            // Hapus password lama
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, dto.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok(new { message = "Password berhasil direset" });
+        }
+
     }
 }

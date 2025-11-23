@@ -63,6 +63,15 @@
         transition: 0.10s;
     }
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    min-width: 900px;
+}
+
 .glass-header th {
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
@@ -124,4 +133,37 @@
 .spinner-border {
     width: 2rem;
     height: 2rem;
+}
+
+/* ------------------------------------
+   RESPONSIVE DATATABLE
+------------------------------------ */
+
+/* Semua kolom boleh wrap */
+table.dataTable td,
+table.dataTable th {
+    white-space: normal !important;
+}
+
+/* Atur tombol supaya nggak terlalu melebar */
+@media (max-width: 768px) {
+
+    #documentTable td .btn-group .btn {
+        padding: 4px 6px !important;
+        font-size: 0.75rem;
+        margin: 1px;
+    }
+
+    #documentTable td,
+    #documentTable th {
+        font-size: 0.78rem;
+    }
+}
+
+/* Modal fullscreen saat mobile */
+@media (max-width: 576px) {
+    #previewModal .modal-dialog {
+        max-width: 100% !important;
+        margin: 0;
+    }
 }

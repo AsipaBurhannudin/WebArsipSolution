@@ -1,0 +1,58 @@
+﻿@model WebArsip.Mvc.Models.ProfileViewModel
+
+@{
+    ViewData["Title"] = "Profil Saya";
+}
+
+<div class="container mt-5" style="max-width: 700px;">
+    <div class="card shadow-lg p-4"
+         style="background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); border-radius: 20px;">
+
+        <h2 class="text-center mb-4 text-white">Profil Saya</h2>
+
+        <!-- Avatar -->
+        <div class="text-center mb-3">
+            <img src="@Model.AvatarUrl"
+                 onerror="this.src='/images/default-avatar.png'"
+                 class="rounded-circle shadow"
+                 width="140" height="140" />
+        </div>
+
+        <!-- Detail -->
+        <div class="text-white mb-4 text-center">
+            <h4>@Model.FullName</h4>
+            <p>@Model.Email</p>
+            <span class="badge bg-primary">@Model.Role</span>
+        </div>
+
+        <hr class="border-secondary" />
+
+        <!-- Update Form -->
+        <form asp-action="Update" method="post">
+            <div class="mb-3">
+                <label class="text-white">Nama Lengkap</label>
+                <input class="form-control text-white" style="background: rgba(255,255,255,0.1);"
+                       name="NewFullName" value="@Model.FullName" />
+            </div>
+
+            <div class="mb-3">
+                <label class="text-white">Avatar URL</label>
+                <input class="form-control text-white" style="background: rgba(255,255,255,0.1);"
+                       name="NewAvatarUrl" value="@Model.AvatarUrl" />
+                <small class="text-muted">Masukkan URL gambar untuk mengganti avatar</small>
+            </div>
+
+            <button class="btn btn-success w-100 mt-3">Simpan Perubahan</button>
+        </form>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success mt-3">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger mt-3">@TempData["Error"]</div>
+        }
+
+    </div>
+</div>

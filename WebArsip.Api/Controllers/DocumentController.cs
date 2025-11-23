@@ -31,39 +31,65 @@ namespace WebArsip.Api.Controllers
         private static DateTime NowLocal() =>
             TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
 
-        // ✅ Universal Access Checker
-        private async Task<bool> HasAccessAsync(string email, IEnumerable<string> roleNames, int docId, Func<Permission, bool> predicate)
+        // ============================
+        // Universal Access Checker
+        // - docId == 0 -> global check (role-based)
+        // - docId > 0  -> check role-based OR per-user permission for that doc
+        // Email comparison case-insensitive
+        // ============================
+        private async Task<bool> HasAccessAsync(string email, IEnumerable<string> roleNames, int docId, Func<UserPermission, bool> checkPermission)
         {
-            var rolePermissions = await _context.Permissions
-                .Include(p => p.Role)
-                .Where(p => p.Role != null && roleNames.Contains(p.Role.Name))
-                .ToListAsync();
-
-            bool hasRolePermission = rolePermissions.Any(predicate);
-
-            var userPermission = await _context.UserPermissions
-                .FirstOrDefaultAsync(up => up.UserEmail == email && up.DocId == docId);
-
-            bool hasUserPermission = false;
-            if (userPermission != null)
+            // 1. Global permission: hanya berlaku untuk aksi CREATE
+            if (docId == 0)
             {
-                var perm = new Permission
+                var rolePerms = await _context.Permissions
+                    .Include(p => p.Role)
+                    .Where(p => roleNames.Contains(p.Role.Name))
+                    .ToListAsync();
+
+                return checkPermission(new UserPermission
                 {
-                    CanView = userPermission.CanView,
-                    CanEdit = userPermission.CanEdit,
-                    CanDelete = userPermission.CanDelete,
-                    CanUpload = userPermission.CanUpload,
-                    CanDownload = userPermission.CanDownload
-                };
-                hasUserPermission = predicate(perm);
+                    CanView = rolePerms.Any(p => p.CanView),
+                    CanEdit = rolePerms.Any(p => p.CanEdit),
+                    CanDelete = rolePerms.Any(p => p.CanDelete),
+                    CanUpload = rolePerms.Any(p => p.CanUpload),
+                    CanDownload = rolePerms.Any(p => p.CanDownload)
+                });
             }
 
-            bool allowed = hasRolePermission || hasUserPermission;
-            Console.WriteLine($"[PermissionCheck] Email={email}, Roles={string.Join(",", roleNames)}, Allowed={allowed}");
-            return allowed;
+            // 2. Ambil dokumen
+            var doc = await _context.Documents
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.DocId == docId);
+
+            if (doc == null)
+                return false;
+
+            bool isOwner = doc.CreatedBy.Equals(email, StringComparison.OrdinalIgnoreCase);
+            bool isAdmin = roleNames.Contains("Admin");
+
+            // Owner dan Admin boleh semua
+            if (isOwner || isAdmin)
+                return true;
+
+            // 3. Hanya cek UserPermission UTK dokumen orang lain
+            var up = await _context.UserPermissions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.DocId == docId && x.UserEmail.ToLower() == email.ToLower());
+
+            if (up != null && checkPermission(up))
+                return true;
+
+            // 4. Tidak boleh fallback ke RolePermission — ini yang sebelumnya bikin jebol
+            return false;
         }
 
-        // ✅ GET All Documents (perbaikan visibility)
+        // ============================
+        // GET All Documents (visibility improved)
+        // Non-admin sees:
+        //  - documents they created (CreatedBy equals email)
+        //  - documents that have UserPermission for them with CanView = true
+        // ============================
         [HttpGet]
         public async Task<ActionResult<PagedResult<DocumentReadDto>>> GetAllDocuments([FromQuery] BaseQueryDto query)
         {
@@ -72,22 +98,28 @@ namespace WebArsip.Api.Controllers
 
             IQueryable<Document> docsQuery = _context.Documents.AsQueryable();
 
-            // Pastikan user memiliki hak view global
-            if (!await HasAccessAsync(email, roles, 0, p => p.CanView))
-                return Forbid();
+            // Pastikan user memiliki hak view global (role-level) OR at least some per-doc permission will be used later.
+            // If user has neither global CanView nor any per-doc CanView, block.
+            var globalCanView = await HasAccessAsync(email, roles, 0, p => p.CanView);
+            var anyPerDocView = await _context.UserPermissions.AnyAsync(up => up.UserEmail.ToLower() == email.ToLower() && up.CanView);
 
-            // 🔹 Non-admin hanya lihat:
-            // - Dokumen yang dia buat sendiri (CreatedBy)
-            // - Dokumen yang dia punya izin view
+            if (!globalCanView && !anyPerDocView)
+            {
+                // no view access at all
+                await _auditLogService.LogPermissionDeniedAsync(User, "LIST", "Document", "N/A", "User lacks any view permission");
+                return Forbid();
+            }
+
+            // Non-admin: restrict to createdBy OR per-doc permitted docs
             if (!roles.Contains("Admin"))
             {
                 var allowedIds = await _context.UserPermissions
-                    .Where(up => up.UserEmail == email && up.CanView)
+                    .Where(up => up.UserEmail.ToLower() == email.ToLower() && up.CanView)
                     .Select(up => up.DocId)
                     .ToListAsync();
 
                 docsQuery = docsQuery.Where(d =>
-                    d.CreatedBy == email || allowedIds.Contains(d.DocId));
+                    d.CreatedBy.ToLower() == email.ToLower() || allowedIds.Contains(d.DocId));
             }
 
             var totalCount = await docsQuery.CountAsync();
@@ -118,7 +150,9 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // ✅ GET By Id
+        // ============================
+        // GET By Id
+        // ============================
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -126,9 +160,12 @@ namespace WebArsip.Api.Controllers
             var roles = GetUserRoles();
 
             if (!await HasAccessAsync(email, roles, id, p => p.CanView))
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "VIEW", "Document", id.ToString(), "User lacks view permission");
                 return Forbid();
+            }
 
-            var doc = await _context.Documents.FindAsync(id);
+            var doc = await _context.Documents.FirstOrDefaultAsync(d => d.DocId == id);
             if (doc == null) return NotFound();
 
             return Ok(new DocumentReadDto
@@ -145,7 +182,10 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // ✅ CREATE Document
+        // ============================
+        // CREATE
+        // ensure CreatedBy uses email (consistent)
+        // ============================
         [HttpPost]
         public async Task<IActionResult> CreateDocument(DocumentCreateDto dto)
         {
@@ -169,7 +209,7 @@ namespace WebArsip.Api.Controllers
                 CreatedDate = now,
                 Status = dto.Status ?? "Draft",
                 Version = 1,
-                CreatedBy = email // 🔹 Penting untuk visibility filtering
+                CreatedBy = email // store email consistently
             };
 
             _context.Documents.Add(doc);
@@ -180,28 +220,43 @@ namespace WebArsip.Api.Controllers
             return Ok(new { success = true, message = "Dokumen berhasil dibuat.", id = doc.DocId });
         }
 
-        // ✅ UPDATE Document
+        // ============================
+        // UPDATE
+        // ============================
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDocument(int id, DocumentCreateDto dto)
         {
             var email = GetUserEmail();
             var roles = GetUserRoles();
 
-            if (!await HasAccessAsync(email, roles, id, p => p.CanEdit))
-            {
-                await _auditLogService.LogPermissionDeniedAsync(User, "UPDATE", "Document", id.ToString(), "User lacks edit permission");
-                return Forbid();
-            }
-
-            var doc = await _context.Documents.FindAsync(id);
+            var doc = await _context.Documents.FirstOrDefaultAsync(d => d.DocId == id);
             if (doc == null) return NotFound();
+
+            bool isOwner = doc.CreatedBy.Equals(email, StringComparison.OrdinalIgnoreCase);
+            bool isAdmin = roles.Contains("Admin");
+
+            // STEP 1: Owner & Admin boleh edit
+            if (!isOwner && !isAdmin)
+            {
+                // STEP 2: Shared permission check
+                var up = await _context.UserPermissions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.DocId == id && x.UserEmail.ToLower() == email.ToLower());
+
+                if (up == null || !up.CanEdit)
+                {
+                    await _auditLogService.LogPermissionDeniedAsync(User, "UPDATE", "Document", id.ToString(),
+                        "User lacks edit permission");
+                    return Forbid();
+                }
+            }
 
             bool changed = false;
 
             if (doc.Title != dto.Title) { doc.Title = dto.Title; changed = true; }
             if (doc.Description != dto.Description) { doc.Description = dto.Description; changed = true; }
 
-            if (!string.IsNullOrEmpty(dto.FilePath) && dto.FilePath != doc.FilePath)
+            if (!string.IsNullOrWhiteSpace(dto.FilePath) && dto.FilePath != doc.FilePath)
             {
                 doc.FilePath = dto.FilePath;
                 doc.OriginalFileName = dto.OriginalFileName;
@@ -213,36 +268,66 @@ namespace WebArsip.Api.Controllers
                 doc.Version += 1;
                 doc.UpdatedAt = NowLocal();
                 await _context.SaveChangesAsync();
-                await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(), $"Dokumen diperbarui: {doc.Title}");
+
+                await _auditLogService.LogAsync(User, "UPDATE", "Document", id.ToString(),
+                    $"Dokumen diperbarui oleh {email}");
             }
 
             return Ok(new { success = true, message = "Dokumen berhasil diperbarui." });
         }
 
-        // ✅ DELETE Document
+        // ============================
+        // DELETE
+        // - Extra safety checks:
+        //   Only allow if HasAccessAsync(... CanDelete) true.
+        //   Log permission denied otherwise.
+        // ============================
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDocument(int id)
         {
             var email = GetUserEmail();
             var roles = GetUserRoles();
 
-            if (!await HasAccessAsync(email, roles, id, p => p.CanDelete))
+            var doc = await _context.Documents.FirstOrDefaultAsync(d => d.DocId == id);
+            if (doc == null)
+                return NotFound();
+
+            bool isOwner = doc.CreatedBy.Equals(email, StringComparison.OrdinalIgnoreCase);
+            bool isAdmin = roles.Contains("Admin");
+
+            // STEP 1 — Owner always allowed
+            if (isOwner || isAdmin)
             {
-                await _auditLogService.LogPermissionDeniedAsync(User, "DELETE", "Document", id.ToString(), "User lacks delete permission");
+                _context.Documents.Remove(doc);
+                await _context.SaveChangesAsync();
+                await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(), $"Dokumen dihapus: {doc.Title}");
+                return Ok(new { success = true, message = "Dokumen berhasil dihapus!" });
+            }
+
+            // STEP 2 — Shared document permission
+            var up = await _context.UserPermissions
+                .FirstOrDefaultAsync(x => x.DocId == id && x.UserEmail.ToLower() == email.ToLower());
+
+            if (up == null || !up.CanDelete)
+            {
+                await _auditLogService.LogPermissionDeniedAsync(User, "DELETE", "Document", id.ToString(),
+                    "User lacks delete permission");
                 return Forbid();
             }
 
-            var doc = await _context.Documents.FindAsync(id);
-            if (doc == null) return NotFound();
-
+            // STEP 3 — Only now delete (shared delete)
             _context.Documents.Remove(doc);
             await _context.SaveChangesAsync();
-            await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(), $"Dokumen dihapus: {doc.Title}");
+
+            await _auditLogService.LogAsync(User, "DELETE", "Document", id.ToString(),
+                $"Dokumen dihapus oleh shared user: {email}");
 
             return Ok(new { success = true, message = "Dokumen berhasil dihapus!" });
         }
 
-        // ✅ DOWNLOAD Document
+        // ============================
+        // DOWNLOAD
+        // ============================
         [HttpGet("download/{id}")]
         public async Task<IActionResult> DownloadDocument(int id)
         {
@@ -255,7 +340,7 @@ namespace WebArsip.Api.Controllers
                 return Forbid();
             }
 
-            var doc = await _context.Documents.FindAsync(id);
+            var doc = await _context.Documents.FirstOrDefaultAsync(d => d.DocId == id);
             if (doc == null) return NotFound();
 
             var path = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, "WebArsipStorage", "uploads", doc.FilePath);
@@ -266,7 +351,9 @@ namespace WebArsip.Api.Controllers
             return File(bytes, "application/octet-stream", doc.OriginalFileName ?? Path.GetFileName(path));
         }
 
-        // ✅ PREVIEW Document
+        // ============================
+        // PREVIEW
+        // ============================
         [HttpGet("preview/{id}")]
         public async Task<IActionResult> PreviewDocument(int id)
         {

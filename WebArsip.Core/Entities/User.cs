@@ -6,5 +6,6 @@ namespace WebArsip.Core.Entities
     {
         public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public string? AvatarUrl { get; set; }
     }
 }

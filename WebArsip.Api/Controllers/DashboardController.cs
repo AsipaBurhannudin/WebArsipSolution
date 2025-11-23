@@ -32,37 +32,48 @@ namespace WebArsip.Api.Controllers
             if (user == null)
                 return NotFound("User tidak ditemukan");
 
-            // 🔹 Query dasar sesuai role
-            var documentQuery = _context.Documents.AsQueryable();
-            var auditLogQuery = _context.AuditLogs.AsQueryable();
-
-            if (!role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            // Admin: full counts
+            if (role.Equals("Admin", StringComparison.OrdinalIgnoreCase))
             {
-                // Jika bukan admin → hanya lihat miliknya
-                documentQuery = documentQuery.Where(d => d.CreatedBy == user.Id.ToString());
-                auditLogQuery = auditLogQuery.Where(a => a.UserId == user.Id.ToString());
+                var resultAdmin = new
+                {
+                    Documents = await _context.Documents.CountAsync(),
+                    Users = await _context.Users.CountAsync(),
+                    Roles = await _context.Roles.CountAsync(),
+                    Permissions = await _context.Permissions.CountAsync(),
+                    AuditLogs = await _context.AuditLogs.CountAsync(),
+                    UserPermissions = await _context.UserPermissions.CountAsync()
+                };
+                return Ok(resultAdmin);
             }
+
+            // Non-admin: documents = created by user OR docs that user has UserPermission.CanView
+            var userDocsCount = await _context.Documents
+                .Where(d => d.CreatedBy.ToLower() == userEmail.ToLower())
+                .CountAsync();
+
+            var permissionDocsCount = await _context.UserPermissions
+                .Where(up => up.UserEmail.ToLower() == userEmail.ToLower() && up.CanView)
+                .Select(up => up.DocId)
+                .Distinct()
+                .CountAsync();
+
+            var totalDocs = userDocsCount + permissionDocsCount;
+
+            // AuditLogs: try both UserId==email OR UserId==user.Id.ToString() to be compatible with older logs
+            var auditLogCount = await _context.AuditLogs
+                .Where(l => l.UserId == userEmail || l.UserId == user.Id.ToString() || l.UserId == userEmail.ToLower())
+                .CountAsync();
 
             var result = new
             {
-                Documents = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-               ? await _context.Documents.CountAsync()
-               : await _context.Documents.Where(d => d.CreatedBy == userEmail).CountAsync(),
-
-                    Users = await _context.Users.CountAsync(),
-                    Roles = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-               ? await _context.Roles.CountAsync()
-               : 0,
-                    Permissions = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-               ? await _context.Permissions.CountAsync()
-               : 0,
-                    AuditLogs = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-               ? await _context.AuditLogs.CountAsync()
-               : await _context.AuditLogs.Where(l => l.UserId == userEmail || l.UserId == userEmail.ToLower()).CountAsync(),
-                    UserPermissions = role.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-               ? await _context.UserPermissions.CountAsync()
-               : 0
-                };
+                Documents = totalDocs,
+                Users = await _context.Users.CountAsync(),
+                Roles = 0,
+                Permissions = 0,
+                AuditLogs = auditLogCount,
+                UserPermissions = 0
+            };
 
             return Ok(result);
         }
@@ -83,17 +94,17 @@ namespace WebArsip.Api.Controllers
                 if (string.IsNullOrEmpty(userEmail))
                     return Forbid();
 
+                // match either email or id string
                 var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
-                if (user == null)
-                    return NotFound("User tidak ditemukan");
+                var idStr = user != null ? user.Id.ToString() : null;
 
-                query = query.Where(l => l.UserId == user.Id.ToString());
+                query = query.Where(l => l.UserId == userEmail || (idStr != null && l.UserId == idStr));
             }
             else if (!string.IsNullOrEmpty(email))
             {
                 var targetUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
                 if (targetUser != null)
-                    query = query.Where(l => l.UserId == targetUser.Id.ToString());
+                    query = query.Where(l => l.UserId == targetUser.Id.ToString() || l.UserId == email);
             }
 
             var logs = await query

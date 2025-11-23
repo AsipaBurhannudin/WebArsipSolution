@@ -6,7 +6,6 @@
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Dashboard";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
 
-    // Opsional: bikin label yang lebih rapi untuk tampil di navbar
     string pageTitle = currentController switch
     {
         "Document" => "Dokumen",
@@ -32,6 +31,7 @@
 
     <!-- 🔹 Core CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/_responsive.css" />
     <link rel="stylesheet" href="~/css/layout-private.css" />
     <link rel="stylesheet" href="~/css/permission/create-permission.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -40,9 +40,12 @@
 
 <body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
       data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
+
+    <!-- WRAPPER: sidebar + page content -->
     <div id="wrapper" class="d-flex">
+
         <!-- 🟣 SIDEBAR -->
-        <nav id="sidebar-wrapper">
+        <nav id="sidebar-wrapper" aria-label="Main sidebar">
             <div class="sidebar-heading text-center py-3">
                 <i class="fa-solid fa-box-archive me-2 text-info"></i> <strong>WebArsip JLM</strong>
             </div>
@@ -64,18 +67,17 @@
             <!-- 🔸 NAVBAR (sticky) -->
             <nav class="navbar navbar-expand-lg navbar-dark sticky-top px-4 py-3">
                 <div class="d-flex align-items-center">
-                    <button id="menu-toggle" type="button" title="Toggle Sidebar">
+                    <button id="menu-toggle" type="button" title="Toggle Sidebar" aria-expanded="false" aria-controls="sidebar-wrapper">
                         <span class="toggle-icon"></span>
                     </button>
                     <span id="navbar-page-title" class="navbar-brand fw-semibold ms-2">@pageTitle</span>
                 </div>
 
-
                 <div class="ms-auto d-flex align-items-center">
                     <div class="profile-dropdown position-relative">
                         <img id="profile-icon" src="~/images/avatar-default.png" alt="Profile" />
-                        <div id="profile-menu" class="profile-menu">
-                            <a href="#"><i class="fas fa-user-circle me-2 text-primary"></i> Profil</a>
+                        <div id="profile-menu" class="profile-menu" aria-hidden="true">
+                            <a asp-controller="Profile" asp-action="Index"><i class="fas fa-user-circle me-2 text-primary"></i> Profil</a>
                             <a href="#"><i class="fas fa-cog me-2 text-warning"></i> Pengaturan</a>
                             <hr class="dropdown-divider" />
                             <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
@@ -93,6 +95,9 @@
         </div>
     </div>
 
+    <!-- OVERLAY (must be immediately after #wrapper for CSS selector to work) -->
+    <div id="sidebar-overlay" aria-hidden="true"></div>
+
     <!-- 🔹 Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
@@ -102,6 +107,7 @@
         window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
     </script>
 
+    <!-- layout script (toggle, overlay) -->
     <script src="~/js/layout-private.js"></script>
     @RenderSection("Scripts", required: false)
 </body>

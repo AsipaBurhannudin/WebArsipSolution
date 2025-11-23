@@ -2,20 +2,52 @@
     const wrapper = document.getElementById("wrapper");
     const toggleBtn = document.getElementById("menu-toggle");
     const sidebar = document.getElementById("sidebar-wrapper");
-    const content = document.getElementById("page-content-wrapper");
     const profileIcon = document.getElementById("profile-icon");
     const profileMenu = document.getElementById("profile-menu");
 
-    // Sidebar toggle + icon morph
-    toggleBtn.addEventListener("click", () => {
+    /* ==========================================================
+       MENU TOGGLE
+    ========================================================== */
+    const toggleSidebar = () => {
         wrapper.classList.toggle("toggled");
         toggleBtn.classList.toggle("active");
-        sidebar.style.transition = "all 0.4s ease";
-        content.classList.add("content-anim");
-        setTimeout(() => content.classList.remove("content-anim"), 400);
+    };
+
+    toggleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleSidebar();
     });
 
-    // Profile dropdown
+    /* ==========================================================
+       AUTO CLOSE WHEN CLICK OUTSIDE (MOBILE)
+    ========================================================== */
+    document.addEventListener("click", (e) => {
+        if (
+            window.innerWidth <= 992 &&
+            wrapper.classList.contains("toggled") &&
+            !sidebar.contains(e.target) &&
+            e.target !== toggleBtn
+        ) {
+            wrapper.classList.remove("toggled");
+            toggleBtn.classList.remove("active");
+        }
+    });
+
+    /* ==========================================================
+       AUTO CLOSE AFTER CLICK MENU ITEM (MOBILE)
+    ========================================================== */
+    document.querySelectorAll("#sidebar-wrapper a").forEach(link => {
+        link.addEventListener("click", () => {
+            if (window.innerWidth <= 992) {
+                wrapper.classList.remove("toggled");
+                toggleBtn.classList.remove("active");
+            }
+        });
+    });
+
+    /* ==========================================================
+       PROFILE MENU
+    ========================================================== */
     if (profileIcon && profileMenu) {
         profileIcon.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -29,7 +61,9 @@
         });
     }
 
-    // Active link highlight
+    /* ==========================================================
+       ACTIVE SIDEBAR HIGHLIGHT
+    ========================================================== */
     const currentUrl = window.location.pathname.toLowerCase();
     document.querySelectorAll("#sidebar-wrapper a").forEach(link => {
         const href = link.getAttribute("href")?.toLowerCase();
@@ -38,11 +72,40 @@
         }
     });
 
-    // Responsive reset
+    /* ==========================================================
+       RESPONSIVE RESET (WITH DEBOUNCE)
+    ========================================================== */
+    let resizeTimer;
     window.addEventListener("resize", () => {
-        if (window.innerWidth > 992 && wrapper.classList.contains("toggled")) {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+
+            // If expanded but user returns to desktop size
+            if (window.innerWidth > 992) {
+                wrapper.classList.remove("toggled");
+                toggleBtn.classList.remove("active");
+            }
+
+        }, 150);
+    });
+
+    /* ==========================================================
+       (OPTIONAL) SWIPE TO CLOSE - MOBILE UX BOOST
+    ========================================================== */
+    let touchXStart = 0;
+
+    document.addEventListener("touchstart", (e) => {
+        touchXStart = e.touches[0].clientX;
+    });
+
+    document.addEventListener("touchmove", (e) => {
+        const diff = e.touches[0].clientX - touchXStart;
+
+        // Swipe → left = close sidebar
+        if (diff < -50 && window.innerWidth <= 992) {
             wrapper.classList.remove("toggled");
             toggleBtn.classList.remove("active");
         }
     });
+
 });

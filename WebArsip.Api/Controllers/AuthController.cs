@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -32,7 +33,9 @@ namespace WebArsip.Api.Controllers
             _signInManager = signInManager;
         }
 
-        // 🔹 LOGIN (respons JSON konsisten)
+        // ============================================================
+        // LOGIN
+        // ============================================================
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
@@ -92,7 +95,9 @@ namespace WebArsip.Api.Controllers
             });
         }
 
-        // 🔹 REGISTER
+        // ============================================================
+        // REGISTER
+        // ============================================================
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
@@ -125,7 +130,9 @@ namespace WebArsip.Api.Controllers
             return Ok(new { success = true, message = "User berhasil didaftarkan." });
         }
 
-        // 🔹 VERIFIKASI PASSWORD ADMIN (untuk fitur "Show Password")
+        // ============================================================
+        // VERIFY ADMIN PASSWORD
+        // ============================================================
         [HttpPost("verify-admin-password")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> VerifyAdminPassword([FromBody] AdminPasswordCheckDto dto)
@@ -141,7 +148,6 @@ namespace WebArsip.Api.Controllers
             if (admin == null)
                 return Unauthorized(new { success = false, message = "Akun admin tidak ditemukan." });
 
-            // ✅ Gunakan _userManager.CheckPasswordAsync (lebih cepat)
             var isValid = await _userManager.CheckPasswordAsync(admin, dto.Password);
 
             if (!isValid)
@@ -150,9 +156,88 @@ namespace WebArsip.Api.Controllers
             return Ok(new { success = true, message = "Verifikasi berhasil." });
         }
 
+        // ============================================================
+        // PROFILE API — GET
+        // ============================================================
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetProfile()
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+
+            var user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+                return NotFound(new { message = "User tidak ditemukan" });
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            return Ok(new
+            {
+                fullName = user.Name,
+                email = user.Email,
+                avatar = user.AvatarUrl,
+                role = roles.FirstOrDefault() ?? "-"
+            });
+        }
+
+        // ============================================================
+        // PROFILE API — UPDATE (NAME + AVATAR URL)
+        // ============================================================
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+                return NotFound(new { message = "User tidak ditemukan" });
+
+            if (!string.IsNullOrWhiteSpace(dto.FullName))
+                user.Name = dto.FullName;
+
+            if (!string.IsNullOrWhiteSpace(dto.AvatarUrl))
+                user.AvatarUrl = dto.AvatarUrl;
+
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { message = "Profil berhasil diperbarui!" });
+        }
+
+        // ============================================================
+        // CHANGE PASSWORD
+        // ============================================================
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Email);
+            var user = await _userManager.FindByEmailAsync(email);
+
+            if (user == null)
+                return NotFound(new { message = "User tidak ditemukan" });
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.OldPassword, dto.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(new
+                {
+                    message = "Gagal mengubah password.",
+                    errors = result.Errors.Select(e => e.Description)
+                });
+
+            return Ok(new { message = "Password berhasil diubah!" });
+        }
+
+        // ============================================================
+        // UPLOAD AVATAR
+        // ============================================================
+        
     }
 
-    // 🔸 DTO Tambahan
+    // DTO tambahan
     public class AdminPasswordCheckDto
     {
         public string Password { get; set; } = string.Empty;
