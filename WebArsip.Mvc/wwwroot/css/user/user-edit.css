@@ -1,0 +1,74 @@
+﻿.input-valid {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 8px rgba(40,167,69,0.4);
+    transition: 0.2s ease-in-out;
+}
+
+.input-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 8px rgba(220,53,69,0.4);
+    transition: 0.2s ease-in-out;
+}
+
+.validation-message {
+    font-size: 0.85rem;
+    margin-top: 2px;
+    opacity: 0;
+    transform: translateY(-5px);
+    transition: 0.2s ease-in-out;
+}
+
+.validation-show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.password-checklist {
+    list-style: none;
+    padding-left: 0;
+    font-size: 0.9rem;
+}
+
+    .password-checklist li {
+        margin-bottom: 5px;
+        color: #dc3545;
+        transition: 0.25s;
+    }
+
+        .password-checklist li.valid {
+            color: #28a745;
+        }
+
+.show-password {
+    font-size: 0.9rem;
+}
+
+/* Strength bar container */
+.strength-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+/* Strength indicator */
+.strength-level {
+    height: 6px;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+/* Colors */
+.strength-weak {
+    background: red;
+}
+
+.strength-medium {
+    background: orange;
+}
+
+.strength-strong {
+    background: limegreen;
+}

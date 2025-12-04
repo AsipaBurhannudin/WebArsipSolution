@@ -1,0 +1,12 @@
+﻿@{
+    var isLoggedIn = Context.Session.GetString("JWToken") != null;
+
+    if (isLoggedIn)
+    {
+        Layout = "_LayoutPrivate";
+    }
+    else
+    {
+        Layout = "_LayoutPublic";
+    }
+}

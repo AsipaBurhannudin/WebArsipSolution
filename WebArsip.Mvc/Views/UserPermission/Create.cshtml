@@ -1,0 +1,93 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.UserPermissionViewModel
+
+@{
+    ViewData["Title"] = "Add User Permission";
+    Layout = "_LayoutPrivate";
+}
+
+<!-- CSS -->
+<link rel="stylesheet" href="~/css/user-permission/adduser-permission.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="container mt-5 mb-5 user-permission-form">
+    <div class="card glass-card shadow-lg border-0 p-4">
+        <h3 class="fw-semibold mb-4 text-gradient">
+            <i class="bi bi-shield-lock"></i> Add User Permission
+        </h3>
+
+        <form asp-action="Create" method="post" id="userPermissionForm" novalidate>
+            <!-- Select User -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-light">Select User</label>
+                <select class="form-select form-control-glass" name="UserEmail" required>
+                    <option value="" class="form-select text-black">-- Pilih User --</option>
+                    @foreach (var user in (IEnumerable<dynamic>)ViewBag.Users)
+                    {
+                        <option value="@user.Email" class="form-select text-black">@user.DisplayName</option>
+                    }
+                </select>
+                <div class="invalid-feedback">Pilih user terlebih dahulu.</div>
+            </div>
+
+            <!-- Select Document -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold text-light">Select Document</label>
+                <select class="form-select form-control-glass" name="DocId" required>
+                    <option value="" class="form-select text-black">-- Pilih Dokumen --</option>
+                    @foreach (var doc in (IEnumerable<WebArsip.Mvc.Models.ViewModels.DocumentViewModel>)ViewBag.Documents)
+                    {
+                        <option value="@doc.DocId" class="form-select text-black">@doc.Title</option>
+                    }
+                </select>
+                <div class="invalid-feedback">Pilih dokumen terlebih dahulu.</div>
+            </div>
+
+            <hr class="divider-light" />
+
+            <!-- Permissions Section -->
+            <h5 class="fw-semibold mb-3 text-gradient">
+                <i class="bi bi-toggle-on"></i> Permission Settings
+            </h5>
+
+            <div class="row gy-2">
+                <div class="col-md-6 col-lg-4">
+                    <div class="form-check custom-check">
+                        <input asp-for="CanView" class="form-check-input" />
+                        <span class="badge bg-success">View</span>
+                    </div>
+                    <div class="form-check custom-check">
+                        <input asp-for="CanDownload" class="form-check-input" />
+                        <span class="badge bg-warning text-dark">Download</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="mt-5 d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-secondary btn-glass">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary btn-glass">
+                    <i class="bi bi-save2"></i> Save Permission
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/alerts.js"></script>
+    <script src="~/js/user-permission/adduser-permission.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = "@TempData["SuccessUP"]";
+            const error = "@TempData["ErrorUP"]";
+            if (success) showAlert("success", "Berhasil!", success);
+            else if (error) showAlert("error", "Gagal!", error);
+        });
+    </script>
+}

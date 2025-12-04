@@ -1,0 +1,119 @@
+/* === DASHBOARD WRAPPER === */
+.dashboard-wrapper {
+    padding: 24px;
+    color: #e4e6eb;
+    background: radial-gradient(circle at top, rgba(30,30,40,0.9), rgba(15,15,25,0.95));
+    min-height: 100vh;
+}
+
+    /* === SECTION TITLE === */
+    .dashboard-wrapper h2 {
+        font-weight: 700;
+        color: #aab4ff;
+        letter-spacing: 0.5px;
+        text-shadow: 0 0 10px rgba(100, 140, 255, 0.25);
+    }
+
+/* === STAT CARDS (Dark Glassmorphism) === */
+.dashboard-card {
+    backdrop-filter: blur(16px) saturate(160%);
+    background: rgba(25, 25, 35, 0.6);
+    border: 1px solid rgba(120, 120, 180, 0.15);
+    border-radius: 18px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+    padding: 1.6rem;
+    transition: all 0.3s ease;
+    color: #e4e6eb;
+}
+
+    .dashboard-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 35px rgba(140, 110, 255, 0.35);
+    }
+
+    /* === CARD TITLE === */
+    .dashboard-card small {
+        display: block;
+        margin-top: 0.4rem;
+        color: #9da8ff;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    /* === CARD VALUE === */
+    .dashboard-card .display-6 {
+        font-size: 2.6rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #90b0ff, #b48cff, #6fbaff);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+/* === CHART SECTION === */
+#chart-section {
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(20, 20, 30, 0.7);
+    border-radius: 18px;
+    padding: 2rem;
+    border: 1px solid rgba(120, 120, 180, 0.15);
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.45);
+}
+
+    #chart-section h4 {
+        color: #a8b4ff;
+        font-weight: 600;
+        text-shadow: 0 0 8px rgba(100, 140, 255, 0.25);
+    }
+
+/* === PIE CHART STYLE === */
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+/* === ANIMATIONS === */
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: translateY(25px) scale(0.95);
+    }
+
+    60% {
+        opacity: 1;
+        transform: translateY(-4px) scale(1.02);
+    }
+
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dashboard-card {
+    animation: bounceIn 0.6s ease both;
+}
+
+.shimmer {
+    width: 100%;
+    height: 30px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmerMove 1.5s infinite;
+    border-radius: 6px;
+}
+
+@keyframes shimmerMove {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .dashboard-card {
+        margin-bottom: 1.2rem;
+    }
+}

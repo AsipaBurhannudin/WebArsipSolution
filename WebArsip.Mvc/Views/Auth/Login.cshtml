@@ -1,0 +1,89 @@
+﻿@using WebArsip.Mvc.Models.ViewModels
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_LayoutPublic";
+}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WebArsip</title>
+    <link rel="stylesheet" href="~/css/style.css">
+    <link rel="stylesheet" href="~/css/_responsive.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h2>Selamat Datang Di WEB ARSIP JLM</h2>
+                    <p>Silahkan Login!</p>
+                </div>
+
+                <form id="loginForm" method="post">
+                    <div class="form-group">
+                        <div class="input-wrapper">
+                            <input asp-for="Email" type="email" id="email" required placeholder=" " />
+                            <label for="email">Email</label>
+                            <span class="focus-border"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-wrapper password-wrapper">
+                            <input asp-for="Password" type="password" id="password" required placeholder="" />
+                            <label for="password">Password</label>
+                            <button type="button" class="password-toggle" id="passwordToggle">
+                                <span class="eye-icon"></span>
+                            </button>
+                            <span class="focus-border"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-btn btn" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                    Toast.fire({
+                        icon: 'success',
+                        title: '@TempData["SuccessMessage"]'
+                    });
+            </text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login gagal!',
+                        text: '@TempData["ErrorMessage"]',
+                        confirmButtonColor: '#d33'
+                    });
+            </text>
+        }
+    </script>
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/login.js"></script>
+</body>
+</html>

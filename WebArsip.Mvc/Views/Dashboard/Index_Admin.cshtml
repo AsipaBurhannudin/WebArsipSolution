@@ -1,0 +1,72 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Admin";
+    Layout = "_LayoutPrivate";
+}
+<link rel="stylesheet" href="~/css/document/index.css" />
+<link rel="stylesheet" href="~/css/dashboard/dashboard-admin.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link rel="stylesheet" href="~/css/theme/datatables-theme.css" />
+<div class="dashboard-wrapper container-fluid">
+    <h2 class="mb-4 text-center">📊 Dashboard Admin</h2>
+
+    <div class="row mt-4 text-center gy-4">
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countDocuments" class="count-value display-6">0</div>
+                <small>Documents</small>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countUsers" class="count-value display-6">0</div>
+                <small>Users</small>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countRoles" class="count-value display-6">0</div>
+                <small>Roles</small>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countPermissions" class="count-value display-6">0</div>
+                <small>Permissions</small>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countUserPermissions" class="count-value display-6">0</div>
+                <small>User Permissions</small>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-6">
+            <div class="dashboard-card">
+                <div id="countAuditLogs" class="count-value display-6">0</div>
+                <small>Audit Logs</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="chart-section" class="mt-5">
+        <h4 class="mb-4 text-center">📈 Analytics Overview</h4>
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <canvas id="countPieChart"></canvas>
+            </div>
+            <div class="col-md-6 mb-3">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/dashboard/dashboard-admin.js"></script>
+}

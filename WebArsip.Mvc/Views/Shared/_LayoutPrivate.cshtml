@@ -1,0 +1,114 @@
+﻿@using WebArsip.Mvc.Helpers
+@inject IConfiguration Configuration
+@{
+    var email = UserRoleHelper.GetUserEmail(Context) ?? "Unknown";
+    var menus = SidebarHelper.GetAccessibleMenus(Context);
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "Dashboard";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "Index";
+
+    string pageTitle = currentController switch
+    {
+        "Document" => "Dokumen",
+        "User" => "Pengguna",
+        "Permission" => "Hak Akses",
+        "Role" => "Peran",
+        "UserPermission" => "Hak Akses User",
+        "AuditLog" => "Log Aktifitas",
+        "Archive" => "Arsip",
+        _ => currentController
+    };
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - WebArsip</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="TempData-Success" content="@TempData["Success"]" />
+    <meta name="TempData-Error" content="@TempData["Error"]" />
+
+    <!-- 🔹 Core CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/_responsive.css" />
+    <link rel="stylesheet" href="~/css/layout-private.css" />
+    <link rel="stylesheet" href="~/css/permission/create-permission.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a2e0ef5b12.js" crossorigin="anonymous"></script>
+</head>
+
+<body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
+      data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
+
+    <!-- WRAPPER: sidebar + page content -->
+    <div id="wrapper" class="d-flex">
+
+        <!-- 🟣 SIDEBAR -->
+        <nav id="sidebar-wrapper" aria-label="Main sidebar">
+            <div class="sidebar-heading text-center py-3">
+                <i class="fa-solid fa-box-archive me-2 text-info"></i> <strong>WebArsip JLM</strong>
+            </div>
+
+            <div class="list-group list-group-flush mt-3">
+                @foreach (var menu in menus)
+                {
+                    var isActive = ViewContext.RouteData.Values["controller"]?.ToString() == menu.Controller ? "active" : "";
+                    <a asp-controller="@menu.Controller" asp-action="Index"
+                       class="list-group-item list-group-item-action @isActive">
+                        <i class="@menu.Icon me-2"></i> @menu.Label
+                    </a>
+                }
+            </div>
+        </nav>
+
+        <!-- 🔹 PAGE CONTENT -->
+        <div id="page-content-wrapper" class="flex-fill">
+            <!-- 🔸 NAVBAR (sticky) -->
+            <nav class="navbar navbar-expand-lg navbar-dark sticky-top px-4 py-3">
+                <div class="d-flex align-items-center">
+                    <button id="menu-toggle" type="button" title="Toggle Sidebar" aria-expanded="false" aria-controls="sidebar-wrapper">
+                        <span class="toggle-icon"></span>
+                    </button>
+                    <span id="navbar-page-title" class="navbar-brand fw-semibold ms-2">@pageTitle</span>
+                </div>
+
+                <div class="ms-auto d-flex align-items-center">
+                    <div class="profile-dropdown position-relative">
+                        <img id="profile-icon" src="~/images/avatar-default.png" alt="Profile" />
+                        <div id="profile-menu" class="profile-menu" aria-hidden="true">
+                            <a asp-controller="Profile" asp-action="Index"><i class="fas fa-user-circle me-2 text-primary"></i> Profil</a>
+                            <a href="#"><i class="fas fa-cog me-2 text-warning"></i> Pengaturan</a>
+                            <hr class="dropdown-divider" />
+                            <form asp-controller="Auth" asp-action="Logout" method="post" class="m-0">
+                                <button type="submit"><i class="fas fa-sign-out-alt me-2 text-danger"></i> Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- 🔸 MAIN CONTENT -->
+            <main class="container-fluid py-4 px-4 dashboard-wrapper">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- OVERLAY (must be immediately after #wrapper for CSS selector to work) -->
+    <div id="sidebar-overlay" aria-hidden="true"></div>
+
+    <!-- 🔹 Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/alert-handler.js"></script>
+    <script>
+        window.API_BASE_URL = '@(Configuration["ApiSettings:BaseUrl"])';
+        window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
+    </script>
+
+    <!-- layout script (toggle, overlay) -->
+    <script src="~/js/layout-private.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

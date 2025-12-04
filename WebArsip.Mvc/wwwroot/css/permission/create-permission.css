@@ -1,0 +1,61 @@
+.permission-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.permission-card {
+    width: 600px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+    .permission-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+
+.permission-select {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    transition: 0.3s ease;
+}
+
+    .permission-select:focus {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: #86b7fe;
+        box-shadow: 0 0 8px rgba(13, 110, 253, 0.5);
+    }
+
+.permission-toggle {
+    width: 2.5em;
+    height: 1.4em;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+    .permission-toggle:checked {
+        background-color: #0d6efd !important;
+    }
+
+.form-check-label {
+    transition: color 0.2s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4b6cb7, #182848);
+    border: none;
+    transition: 0.3s;
+}
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #5470c6, #1b2a59);
+        transform: scale(1.03);
+    }

@@ -1,0 +1,6 @@
+@WebArsip.Api_HostAddress = http://localhost:5287
+
+GET {{WebArsip.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,38 @@
+﻿@model WebArsip.Core.DTOs.SerialNumberFormatDto
+@{
+    ViewData["Title"] = "Edit Serial Format";
+}
+<link rel="stylesheet" href="~/css/glass.css" />
+
+<div class="glass-card p-4">
+    <h3>Edit Serial Template</h3>
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="Id" />
+        <div class="mb-2">
+            <label>Name</label>
+            <input asp-for="Name" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <label>Key</label>
+            <input asp-for="Key" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <label>Pattern</label>
+            <input asp-for="Pattern" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <label>Current Number</label>
+            <input asp-for="CurrentNumber" class="form-control" />
+        </div>
+        <div class="mb-2 form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label">Active</label>
+        </div>
+        <div class="mb-2">
+            <label>Note</label>
+            <input asp-for="Note" class="form-control" />
+        </div>
+        <button class="btn btn-success">Save</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

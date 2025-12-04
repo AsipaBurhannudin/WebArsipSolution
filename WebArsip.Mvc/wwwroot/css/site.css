@@ -1,0 +1,138 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    overflow-x : hidden;
+}
+
+/* Fix bootstrap outline */
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+/* Wrapper */
+#wrapper {
+    display: flex;
+    min-height: 100vh;
+    height: 100%;
+}
+
+/* Sidebar */
+#sidebar-wrapper {
+    z-index: 1020;
+    width: 250px;
+    background-color: #343a40;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    flex-shrink: 0;
+    position: fixed; /* sidebar fix kiri */
+    top: 0;
+    bottom: 0;
+    left: 0;
+}
+
+    #sidebar-wrapper .list-group {
+        flex-grow: 1;
+        overflow-y: auto;
+    }
+
+    #sidebar-wrapper .list-group-item {
+        border: none;
+        color: #ddd;
+        transition: all 0.2s ease;
+    }
+
+        #sidebar-wrapper .list-group-item:hover {
+            background: #495057;
+            color: #fff;
+        }
+
+        /* Active menu */
+        #sidebar-wrapper .list-group-item.active {
+            background: #06b6d4 !important;
+            color: #fff !important;
+            font-weight: bold;
+            border-left: 4px solid #00f7ff;
+        }
+
+.main-content {
+    overflow-x: hidden;
+}
+/* Content wrapper */
+#page-content-wrapper {
+    flex: 1;
+    margin-left: 250px; /* geser karena sidebar fixed */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 250px; /* offset sidebar */
+    right: 0;
+    z-index: 1000;
+    height: 56px;
+}
+
+    .navbar .navbar-text {
+        white-space: nowrap; /* biar ga pecah ke bawah */
+        padding-right: 15px;
+    }
+
+.dataTables_length {
+    margin-right: auto; /* biar geser ke kiri */
+}
+
+/* Konten */
+.container-fluid {
+    flex: 1;
+    margin-top: 70px; /* kasih space untuk navbar */
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* Collapsed sidebar */
+#wrapper.toggled #sidebar-wrapper {
+    width: 70px;
+}
+
+#wrapper.toggled #page-content-wrapper {
+    margin-left: 70px;
+}
+
+#wrapper.toggled .navbar {
+    left: 70px;
+}
+
+.modal-content {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: none;
+}
+
+.btn-close-white {
+    filter: invert(1);
+}

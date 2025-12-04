@@ -1,0 +1,38 @@
+﻿@model WebArsip.Core.DTOs.SerialNumberCreateDto
+@{
+    ViewData["Title"] = "Create Serial Format";
+}
+<link rel="stylesheet" href="~/css/glass.css" />
+
+<div class="glass-card p-4">
+    <h3>Create Serial Template</h3>
+    <form asp-action="Create" method="post">
+        <div class="mb-2">
+            <label>Name</label>
+            <input asp-for="Name" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <label>Key (unique, uppercase)</label>
+            <input asp-for="Key" class="form-control" />
+        </div>
+        <div class="mb-2">
+            <label>Pattern (use {DATE} and {NUMBER:n})</label>
+            <input asp-for="Pattern" class="form-control" />
+            <small class="form-text text-white">Example: HO-PCJLM/SK/{DATE}/{NUMBER:3}</small>
+        </div>
+        <div class="mb-2">
+            <label>Start Number</label>
+            <input asp-for="StartNumber" class="form-control" />
+        </div>
+        <div class="mb-2 form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label">Active</label>
+        </div>
+        <div class="mb-2">
+            <label>Note</label>
+            <input asp-for="Note" class="form-control" />
+        </div>
+        <button class="btn btn-success">Create</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

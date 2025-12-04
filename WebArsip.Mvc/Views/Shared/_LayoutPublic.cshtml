@@ -1,0 +1,18 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>@ViewData["Title"] - WebArsip</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/_responsive.css" />
+</head>
+<body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
+      data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
+    <div class="container mt-5">
+        @RenderBody()
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

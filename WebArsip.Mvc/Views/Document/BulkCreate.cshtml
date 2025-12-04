@@ -1,0 +1,86 @@
+﻿@using WebArsip.Mvc.Models.ViewModels
+@model DocumentBulkCreateViewModel
+
+<link rel="stylesheet" href="~/css/document/index.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link rel="stylesheet" href="~/css/theme/datatables-theme.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<h2 class="text-white mb-3">Bulk Create Documents</h2>
+
+<form asp-action="BulkCreate" method="post" enctype="multipart/form-data">
+    <div class="glass-card p-4">
+
+        <!-- SERIAL FORMAT SELECT (GLOBAL) -->
+        <div class="mb-3">
+            <label class="form-label text-light">Serial Format</label>
+            <select id="SerialFormatId" name="SerialFormatId"
+                    class="form-select bg-transparent text-light border-light serial-format-selector"
+                    data-mode="bulk">
+                <option value="">-- No Serial / Manual Title --</option>
+
+                @foreach (var sf in ViewBag.SerialFormats)
+                {
+                    <option value="@sf.Id" class="text-dark">@sf.Name</option>
+                }
+            </select>
+        </div>
+
+        <table class="table table-dark table-striped align-middle" id="bulkTable">
+            <thead>
+                <tr>
+                    <th>Title (Auto if Serial Format Selected)</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>File</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @for (int i = 0; i < Model.Items.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <input asp-for="Items[@i].Title" class="form-control doc-title" />
+                        </td>
+                        <td>
+                            <input asp-for="Items[@i].Description" class="form-control" />
+                        </td>
+                        <td>
+                            <select asp-for="Items[@i].Status" class="form-select">
+                                <option>Published</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input asp-for="Items[@i].FileUpload" type="file" class="form-control"
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx" required />
+                            <div class="invalid-feedback text-warning">Please upload a valid document file.</div>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-danger remove-row">X</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2">
+            <button type="button" id="addRow" class="btn btn-secondary mb-3">
+                + Add Row
+            </button>
+
+            <button type="submit" class="btn btn-primary">
+                Create All
+            </button>
+            <a asp-action="Index" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+        </div>
+    </div>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    window.initialRowCount = @Model.Items.Count;
+</script>
+<script src="~/js/serial-helper.js"></script>

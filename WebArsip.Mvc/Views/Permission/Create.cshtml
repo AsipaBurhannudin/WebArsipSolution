@@ -1,0 +1,111 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.PermissionViewModel
+
+@{
+    ViewData["Title"] = "Add Global Role Permission";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/permission/index.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+
+<div class="permission-container mt-4">
+    <div class="card permission-card shadow-lg p-4">
+        <h3 class="fw-semibold mb-4 text-white text-center">
+            <i class="bi bi-shield-lock"></i> Add Global Role Permission
+        </h3>
+
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            <!-- Dropdown Role -->
+            <div class="mb-4">
+                <label class="form-label text-light">Select Role</label>
+                <select class="form-select form-select-lg permission-select" name="RoleId" required>
+                    <option value="" class="form-select text-black">-- Pilih Role --</option>
+                    @foreach (var role in ViewBag.Roles as SelectList)
+                    {
+                        <option value="@role.Value" class="form-select text-black">@role.Text</option>
+                    }
+                </select>
+                <div class="invalid-feedback text-warning">
+                    Harap pilih role terlebih dahulu.
+                </div>
+            </div>
+
+            <hr class="bg-light opacity-25" />
+
+            <!-- Permissions Checkboxes -->
+            <h5 class="fw-semibold text-light mb-3">Assign Permissions</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanView" class="form-check-input permission-toggle" type="checkbox" id="canView" />
+                        <label class="form-check-label text-light" for="canView"></label>
+                        <span class="badge bg-success">View</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanEdit" class="form-check-input permission-toggle" type="checkbox" id="canEdit" />
+                        <label class="form-check-label text-light" for="canEdit"></label>
+                        <span class="badge bg-info text-dark">Edit</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanDelete" class="form-check-input permission-toggle" type="checkbox" id="canDelete" />
+                        <label class="form-check-label text-light" for="canDelete"></label>
+                        <span class="badge bg-danger">Delete</span>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanUpload" class="form-check-input permission-toggle" type="checkbox" id="canUpload" />
+                        <label class="form-check-label text-light" for="canUpload"></label>
+                        <span class="badge bg-secondary">Upload</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanDownload" class="form-check-input permission-toggle" type="checkbox" id="canDownload" />
+                        <label class="form-check-label text-light" for="canDownload"></label>
+                        <span class="badge bg-warning text-dark">Download</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-save"></i> Save Permission
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Bootstrap form validation
+        (() => {
+            'use strict'
+            const forms = document.querySelectorAll('.needs-validation')
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })();
+
+        // Animate toggles (highlight active)
+        document.querySelectorAll(".permission-toggle").forEach(chk => {
+            chk.addEventListener("change", e => {
+                const label = e.target.nextElementSibling;
+                if (e.target.checked) {
+                    label.classList.add("text-success", "fw-bold");
+                } else {
+                    label.classList.remove("text-success", "fw-bold");
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,53 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.UserEditViewModel
+@{
+    ViewData["Title"] = "✏ Edit User";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/user/form.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+
+<div class="container mt-5 mb-5">
+    <div class="card glass-card shadow-lg border-0 p-4">
+        <h3 class="fw-semibold text-gradient mb-4"><i class="bi bi-pencil-square"></i> Edit User</h3>
+
+        <form id="editUserForm" asp-action="Edit" method="post">
+            <input type="hidden" asp-for="UserId" />
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-semibold"></label>
+                <input asp-for="Name" class="form-control glass-input" placeholder="Enter name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-semibold"></label>
+                <input asp-for="Email" class="form-control glass-input" placeholder="Enter email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RoleId" class="form-label fw-semibold"></label>
+                <select asp-for="RoleId" asp-items="Model.Roles" class="form-select glass-input text-light"></select>
+            </div>
+
+            <div class="form-check mb-4">
+                <input asp-for="IsActive" class="form-check-input" type="checkbox" id="IsActive" />
+                <label class="form-check-label" for="IsActive">Active</label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-success btn-glass px-4 rounded-pill">
+                    <i class="bi bi-save2"></i> Save Changes
+                </button>
+                <a asp-action="Index" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/user/edit-user.js"></script>
+}

@@ -1,0 +1,109 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.PermissionViewModel
+
+@{
+    ViewData["Title"] = "Edit Permission";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/permission/index.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+
+<div class="permission-container mt-4">
+    <div class="card permission-card shadow-lg p-4">
+        <h3 class="fw-semibold mb-4 text-white text-center">
+            <i class="bi bi-pencil-square"></i> Edit Role Permission
+        </h3>
+
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            <input type="hidden" asp-for="PermissionId" />
+
+            <!-- Dropdown Role -->
+            <div class="mb-4">
+                <label class="form-label text-light">Select Role</label>
+
+                <!-- Dropdown hanya tampilan (readonly visual) -->
+                <select class="form-select form-select-lg text-black" asp-for="RoleId" asp-items="ViewBag.Roles" readonly style="pointer-events:none; background-color:#e9ecef; opacity:0.8;">
+                    <option value="">-- Pilih Role --</option>
+                </select>
+
+                <!-- Hidden input supaya RoleId tetap terkirim ke server -->
+                <input type="hidden" asp-for="RoleId" />
+
+                <div class="invalid-feedback text-warning">Harap pilih role terlebih dahulu.</div>
+            </div>
+
+            <hr class="bg-light opacity-25" />
+
+            <!-- Permissions -->
+            <h5 class="fw-semibold text-light mb-3">Assign Permissions</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanView" class="form-check-input permission-toggle" type="checkbox" id="canView" />
+                        <label class="form-check-label text-light" for="canView"></label>
+                        <span class="badge bg-success">View</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanEdit" class="form-check-input permission-toggle" type="checkbox" id="canEdit" />
+                        <label class="form-check-label text-light" for="canEdit"></label>
+                        <span class="badge bg-info text-dark">Edit</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanDelete" class="form-check-input permission-toggle" type="checkbox" id="canDelete" />
+                        <label class="form-check-label text-light" for="canDelete"></label>
+                        <span class="badge bg-danger">Delete</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanUpload" class="form-check-input permission-toggle" type="checkbox" id="canUpload" />
+                        <label class="form-check-label text-light" for="canUpload"></label>
+                        <span class="badge bg-secondary">Upload</span>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="CanDownload" class="form-check-input permission-toggle" type="checkbox" id="canDownload" />
+                        <label class="form-check-label text-light" for="canDownload"></label>
+                        <span class="badge bg-warning text-dark">Download</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <i class="bi bi-save2"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
+
+            if (success && success !== "") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Berhasil!",
+                    text: success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else if (error && error !== "") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal!",
+                    text: error,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,35 @@
+﻿@model List<WebArsip.Core.DTOs.SerialNumberFormatDto>
+@{
+    ViewData["Title"] = "Serial Number Formats";
+}
+<link rel="stylesheet" href="~/css/glass.css" />
+
+<div class="glass-card p-4">
+    <h2>Serial Number Formats</h2>
+    <a asp-action="Create" class="btn btn-primary mb-3">Add New Format</a>
+
+    <table class="table">
+        <thead>
+            <tr><th>Name</th><th>Key</th><th>Pattern</th><th>Next</th><th>Active</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var f in Model)
+            {
+                <tr>
+                    <td>@f.Name</td>
+                    <td>@f.Key</td>
+                    <td><code>@f.Pattern</code></td>
+                    <td>@f.CurrentNumber</td>
+                    <td>@(f.IsActive ? "Yes" : "No")</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@f.Id">Edit</a> |
+                        <form asp-action="Delete" method="post" style="display:inline">
+                            <input type="hidden" name="id" value="@f.Id" />
+                            <button type="submit" class="btn btn-link" onclick="return confirm('Delete format?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

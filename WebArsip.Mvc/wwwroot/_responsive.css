@@ -1,0 +1,43 @@
+﻿/* GLOBAL FIX ================================= */
+
+/* Menghilangkan horizontal scroll */
+html, body {
+    overflow-x: hidden;
+}
+
+/* Container default biar nyaman di layar HP */
+@media (max-width: 576px) {
+    .container {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+}
+
+/* Title & header shrink */
+@media (max-width: 576px) {
+    h1, h2, h3, h4, h5 {
+        font-size: calc(100% + .3rem);
+    }
+}
+
+/* CARD ---------------------------------------- */
+@media (max-width: 768px) {
+    .card {
+        margin: 8px 0;
+    }
+}
+
+/* BUTTON -------------------------------------- */
+@media (max-width: 576px) {
+    .btn {
+        width: 100%;
+        margin-bottom: 6px;
+    }
+}
+
+/* FORM LABELS -------------------------------- */
+@media (max-width: 576px) {
+    .form-label {
+        font-size: .9rem;
+    }
+}

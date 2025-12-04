@@ -1,0 +1,49 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard User";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/document/index.css" />
+<link rel="stylesheet" href="~/css/dashboard/dashboard-user.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+
+<div class="user-dashboard-wrapper container-fluid">
+    <section class="welcome-section text-center mb-5">
+        <h2 class="fw-bold text-gradient">📈 Dashboard Anda</h2>
+        <p class="text-light opacity-75">Selamat datang kembali! Berikut aktivitas dan dokumen Anda minggu ini.</p>
+    </section>
+
+    <!-- 🔹 Count Cards -->
+    <div class="row g-4 justify-content-center">
+        <div class="col-md-5">
+            <div class="count-card card-glass d-flex flex-column align-items-center justify-content-center py-4">
+                <h5 class="text-light mb-2">📂 Dokumen Anda</h5>
+                <h2 id="userDocCount" class="count-value fw-bold text-accent">@Model.DocumentCount</h2>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="count-card card-glass d-flex flex-column align-items-center justify-content-center py-4">
+                <h5 class="text-light mb-2">🕓 Aktivitas Log</h5>
+                <h2 id="userLogCount" class="count-value fw-bold text-accent">@Model.AuditLogCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Chart Section -->
+    <section class="chart-section mt-5">
+        <h4 class="text-center text-light mb-3">📊 Aktivitas 7 Hari Terakhir</h4>
+        <div class="chart-container card-glass p-4 mx-auto" style="max-width: 800px;">
+            <canvas id="userActivityChart" height="100"></canvas>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        window.JWT_TOKEN = '@Context.Session.GetString("JWToken")';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/dashboard/dashboard-user.js"></script>
+}

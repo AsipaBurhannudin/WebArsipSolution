@@ -1,0 +1,87 @@
+﻿body {
+    background: linear-gradient(145deg, #0d1117, #161b22);
+    color: #e6edf3;
+    font-family: 'Poppins', sans-serif;
+}
+
+.text-gradient {
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: 0.3s ease-in-out;
+}
+
+    .glass-card:hover {
+        transform: scale(1.01);
+        border-color: rgba(255, 255, 255, 0.2);
+    }
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: none;
+    transition: 0.3s ease;
+}
+
+    .btn-glass:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.05);
+    }
+
+.table-dark {
+    background: transparent;
+}
+
+    .table-dark tbody tr:hover {
+        background: rgba(255, 255, 255, 0.07);
+        transition: 0.2s ease;
+    }
+
+.glass-header th {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border: none;
+}
+
+.badge.bg-gradient {
+    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    font-size: 0.85rem;
+    border-radius: 10px;
+    color: #fff;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    background: #0d1117;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 6px 10px;
+}
+
+.dataTables_wrapper .dataTables_length select {
+    background: #0d1117;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.dataTables_paginate .paginate_button {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    margin: 0 3px;
+    color: #fff !important;
+}
+
+    .dataTables_paginate .paginate_button.current {
+        background: linear-gradient(90deg, #00c6ff, #0072ff);
+        font-weight: bold;
+    }

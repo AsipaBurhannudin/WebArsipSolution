@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebArsip.Core", "WebArsip.Core\WebArsip.Core.csproj", "{F51AE0FA-EB22-48E9-A071-54ECC51D5ECE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebArsip.Infrastructure", "WebArsip.Infrastructure\WebArsip.Infrastructure.csproj", "{8ABE00C6-E285-4C22-9A7D-6B9EA2E8BB6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebArsip.Api", "WebArsip.Api\WebArsip.Api.csproj", "{86CF2394-197A-4FD9-B115-54B44C9D41BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebArsip.Mvc", "WebArsip.Mvc\WebArsip.Mvc.csproj", "{8840FB67-326D-452E-8ACF-7FAC8FF6B801}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WebArsipStorage", "WebArsipStorage", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "uploads", "uploads", "{72C6C8BD-21C2-4D82-B7B8-30C9C11FEE0C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebArsip.Tests", "WebArsip.Tests\WebArsip.Tests.csproj", "{AF674AC2-CCE7-4A14-AADF-FDF3D761BFF2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F51AE0FA-EB22-48E9-A071-54ECC51D5ECE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F51AE0FA-EB22-48E9-A071-54ECC51D5ECE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F51AE0FA-EB22-48E9-A071-54ECC51D5ECE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F51AE0FA-EB22-48E9-A071-54ECC51D5ECE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ABE00C6-E285-4C22-9A7D-6B9EA2E8BB6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ABE00C6-E285-4C22-9A7D-6B9EA2E8BB6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ABE00C6-E285-4C22-9A7D-6B9EA2E8BB6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ABE00C6-E285-4C22-9A7D-6B9EA2E8BB6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86CF2394-197A-4FD9-B115-54B44C9D41BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86CF2394-197A-4FD9-B115-54B44C9D41BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86CF2394-197A-4FD9-B115-54B44C9D41BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86CF2394-197A-4FD9-B115-54B44C9D41BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8840FB67-326D-452E-8ACF-7FAC8FF6B801}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8840FB67-326D-452E-8ACF-7FAC8FF6B801}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8840FB67-326D-452E-8ACF-7FAC8FF6B801}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8840FB67-326D-452E-8ACF-7FAC8FF6B801}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF674AC2-CCE7-4A14-AADF-FDF3D761BFF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF674AC2-CCE7-4A14-AADF-FDF3D761BFF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF674AC2-CCE7-4A14-AADF-FDF3D761BFF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF674AC2-CCE7-4A14-AADF-FDF3D761BFF2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{72C6C8BD-21C2-4D82-B7B8-30C9C11FEE0C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F1DD38E9-E867-4E8F-8798-BF246033C412}
+	EndGlobalSection
+EndGlobal

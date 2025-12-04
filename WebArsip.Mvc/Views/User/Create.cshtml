@@ -1,0 +1,101 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.UserCreateViewModel
+@{
+    ViewData["Title"] = "➕ Add New User";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/user/form.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link rel="stylesheet" href="~/css/user/password-strength.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+
+<div class="container mt-5 mb-5">
+    <div class="card glass-card shadow-lg border-0 p-4">
+        <h3 class="fw-semibold text-gradient mb-4">
+            <i class="bi bi-person-plus"></i> Add New User
+        </h3>
+
+        <form id="addUserForm" asp-action="Create" method="post" novalidate>
+
+            <div class="mb-3">
+                <label asp-for="Name" class="form-label fw-semibold"></label>
+                <input asp-for="Name" class="form-control glass-input" placeholder="Enter full name" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label fw-semibold"></label>
+                <input asp-for="Email" class="form-control glass-input" placeholder="Enter email address" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Password</label>
+                <div class="input-group">
+                    <input type="password"
+                           id="Password"
+                           name="Password"
+                           class="form-control glass-input"
+                           placeholder="Enter password" />
+                    <button type="button" id="togglePwd" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+
+                <div class="mt-2 small">
+                    <ul class="password-checklist list-unstyled">
+                        <li id="chkLength" data-label="Minimal 6 karakter" class="invalid">
+                            <i class="bi bi-x-circle"></i> Minimal 6 karakter
+                        </li>
+                        <li id="chkNumber" data-label="Mengandung angka" class="invalid">
+                            <i class="bi bi-x-circle"></i> Mengandung angka
+                        </li>
+                        <li id="chkUpper" data-label="Mengandung huruf kapital" class="invalid">
+                            <i class="bi bi-x-circle"></i> Mengandung huruf kapital
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="strength-bar mt-2">
+                    <div id="StrengthBar" class="strength-level"></div>
+                </div>
+
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Confirm Password</label>
+                <div class="input-group">
+                    <input type="password"
+                           id="ConfirmPassword"
+                           name="ConfirmPassword"
+                           class="form-control glass-input"
+                           placeholder="Confirm password" />
+                    <button type="button" id="toggleConfirmPwd" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <span id="confirmMessage" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="RoleId" class="form-label fw-semibold"></label>
+                <select asp-for="RoleId" asp-items="Model.Roles" class="form-select glass-input"></select>
+                <span asp-validation-for="RoleId" class="text-danger small"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" id="btnSave" class="btn btn-primary btn-glass px-4 rounded-pill" disabled>
+                    <i class="bi bi-save2"></i> Save
+                </button>
+                <a asp-action="Index" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/user/add-user.js"></script>
+}

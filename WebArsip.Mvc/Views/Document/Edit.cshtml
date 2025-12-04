@@ -1,0 +1,118 @@
+﻿@model WebArsip.Mvc.Models.ViewModels.DocumentViewModel
+
+@{
+    ViewData["Title"] = "✏️ Edit Document";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/document/form.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+
+<div class="container mt-5 mb-5 document-edit-container">
+    <div class="card glass-card shadow-lg p-4">
+        <h3 class="fw-semibold text-center text-gradient mb-4">
+            <i class="bi bi-pencil-square"></i> Edit Document
+        </h3>
+
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <input type="hidden" asp-for="DocId" />
+            <input type="hidden" asp-for="FilePath" />
+            <input type="hidden" asp-for="OriginalFileName" />
+
+            <!-- Title -->
+            <div class="mb-3">
+                <label class="form-label text-light">Document Title</label>
+                <input asp-for="Title" class="form-control form-control-lg text-light bg-transparent border-light" required />
+                <div class="invalid-feedback text-warning">Please enter the document title.</div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label text-light">Description</label>
+                <textarea asp-for="Description" class="form-control text-light bg-transparent border-light" rows="3" required></textarea>
+                <div class="invalid-feedback text-warning">Description cannot be empty.</div>
+            </div>
+
+            <!-- Status -->
+            <div class="mb-4">
+                <label class="form-label text-light">Status</label>
+                <select asp-for="Status" class="form-select bg-transparent text-light border-light" required>
+                    <option value="Published" class="text-dark" selected="@(Model.Status == "Published")">Published</option>
+                </select>
+                <div class="invalid-feedback text-warning">Please select document status.</div>
+            </div>
+
+            <!-- File Upload -->
+            <div class="mb-4">
+                <label class="form-label text-light">Replace File (optional)</label>
+                <input type="file" name="FileUpload" class="form-control bg-transparent text-light border-light" accept=".pdf,.doc,.docx,.xls,.xlsx" />
+                <div class="form-text text-secondary">
+                    Leave empty if you don't want to replace the file.<br />
+                    <strong>Current File:</strong> @Model.OriginalFileName
+                </div>
+            </div>
+
+            <!-- Version -->
+            <div class="mb-4">
+                <label class="form-label text-light">Version</label>
+                <input type="text" value=@($"v{Model.Version}") class="form-control text-light bg-transparent border-light" disabled />
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-left-circle"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary btn-glass px-4 rounded-pill">
+                    <i class="bi bi-save2"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
+
+            if (success && success !== "") {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: success,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else if (error && error !== "") {
+                Swal.fire({
+                    icon: "error",
+                    title: "Failed!",
+                    text: error,
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            }
+
+            // ✅ Bootstrap validation
+            const forms = document.querySelectorAll('.needs-validation');
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Invalid!',
+                            text: 'Please check the form and try again.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        });
+    </script>
+}

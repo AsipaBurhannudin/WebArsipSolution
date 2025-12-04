@@ -1,0 +1,121 @@
+﻿@model IEnumerable<WebArsip.Mvc.Models.ViewModels.AuditLogViewModel>
+
+@{
+    ViewData["Title"] = "🕓 Audit Logs";
+    Layout = "_LayoutPrivate";
+}
+
+<link rel="stylesheet" href="~/css/auditlog/index.css" />
+<link rel="stylesheet" href="~/css/_responsive.css" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+<div class="container mt-5 mb-5">
+    <div class="glass-card shadow-lg border-0 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="fw-semibold text-gradient">
+                <i class="bi bi-activity"></i> System Audit Trail
+            </h3>
+            <div>
+                <a href="/api/auditlog/export" class="btn btn-outline-info rounded-pill px-4 me-2" target="_blank">
+                    <i class="bi bi-file-earmark-arrow-down"></i> Export CSV
+                </a>
+                <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </a>
+            </div>
+        </div>
+
+        <!-- 🔍 Filter Section -->
+        <form method="get" class="filter-bar mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label text-light">From Date</label>
+                    <input type="date" name="from" class="form-control form-control-glass text-dark"
+                           value="@(ViewBag.From != null ? ((DateTime)ViewBag.From).ToString("yyyy-MM-dd") : "")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-light">To Date</label>
+                    <input type="date" name="to" class="form-control form-control-glass text-dark"
+                           value="@(ViewBag.To != null ? ((DateTime)ViewBag.To).ToString("yyyy-MM-dd") : "")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label text-light">Action</label>
+                    <select name="action" class="form-select form-control-glass text-dark">
+                        <option value="">All Actions</option>
+                        @{
+                            var actions = new[] { "CREATE", "UPDATE", "DELETE", "VIEW", "DOWNLOAD", "DENIED_CREATE", "DENIED_UPDATE", "DENIED_DELETE", "DENIED_VIEW" };
+                            foreach (var act in actions)
+                            {
+                                <option value="@act" selected="@(ViewBag.SelectedAction == act ? "selected" : null)">
+                                    @act
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary btn-glass w-100">
+                        <i class="bi bi-search"></i> Apply Filter
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="timeline">
+                @foreach (var log in Model)
+                {
+                    var colorClass = log.Action?.ToLower() switch
+                    {
+                        "create" => "dot-success",
+                        "update" => "dot-warning",
+                        "delete" => "dot-danger",
+                        "download" => "dot-info",
+                        "view" => "dot-primary",
+                        "denied" => "dot-muted",
+                        _ => "dot-default"
+                    };
+
+                    <div class="timeline-item">
+                        <div class="timeline-dot @colorClass"></div>
+                        <div class="timeline-content glass-inner">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold text-gradient">@log.Action?.ToUpper()</span>
+                                <small class="text-secondary">@log.Timestamp.ToLocalTime().ToString("dd MMM yyyy, HH:mm:ss")</small>
+                            </div>
+                            <p class="mb-1">@log.Details</p>
+                            <small class="text-muted">
+                                <i class="bi bi-person"></i> <b>User:</b> @log.UserId |
+                                <i class="bi bi-box"></i> <b>@log.EntityName</b> (#@log.EntityId)
+                            </small>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-inboxes" style="font-size: 2rem;"></i>
+                <p class="mt-2">No audit logs found in the selected range.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const success = '@TempData["Success"]';
+            const error = '@TempData["Error"]';
+
+            if (success && success !== "") {
+                Swal.fire({ toast: true, icon: 'success', title: success, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            } else if (error && error !== "") {
+                Swal.fire({ toast: true, icon: 'error', title: error, position: 'top-end', showConfirmButton: false, timer: 2000 });
+            }
+        });
+    </script>
+}
