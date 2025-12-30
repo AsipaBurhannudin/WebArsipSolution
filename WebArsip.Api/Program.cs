@@ -23,6 +23,7 @@ public partial class Program
         builder.Services.AddScoped<AuditLogService>();
         builder.Services.AddScoped<PermissionService, PermissionService>();
         builder.Services.AddScoped<SerialNumberService>();
+        builder.Services.AddScoped<SerialNumberMonthlyCounter>();
 
         builder.Services.AddMemoryCache();
         builder.Services.AddLogging();

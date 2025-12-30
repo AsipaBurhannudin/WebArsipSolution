@@ -325,6 +325,32 @@ namespace WebArsip.Infrastructure.Migrations
                     b.ToTable("SerialNumberFormats");
                 });
 
+            modelBuilder.Entity("WebArsip.Core.Entities.SerialNumberMonthlyCounter", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("CurrentNumber")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FormatKey")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SerialNumberMonthlyCounters");
+                });
+
             modelBuilder.Entity("WebArsip.Core.Entities.User", b =>
                 {
                     b.Property<int>("Id")

@@ -7,6 +7,7 @@
 </head>
 <body data-user-email="@User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value"
       data-user-role="@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value">
+
     <div class="container mt-5">
         @RenderBody()
     </div>

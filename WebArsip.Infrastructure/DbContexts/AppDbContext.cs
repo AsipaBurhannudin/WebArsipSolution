@@ -14,6 +14,7 @@ namespace WebArsip.Infrastructure.DbContexts
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<UserPermission> UserPermissions { get; set; }
         public DbSet<SerialNumberFormat> SerialNumberFormats { get; set; }
+        public DbSet<SerialNumberMonthlyCounter> SerialNumberMonthlyCounters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

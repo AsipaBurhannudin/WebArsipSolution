@@ -10,5 +10,6 @@ namespace WebArsip.Core.DTOs
     {
         public string Key { get; set; } = string.Empty; // template key
         public DateTime? Date { get; set; } // optional override date for preview
+        public long CurrentNumber { get; set; }
     }
 }

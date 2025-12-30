@@ -3,15 +3,19 @@
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
     const loginBtn = document.getElementById("loginBtn");
+    const pwdToggle = document.getElementById("passwordToggle");
+    const eyeIcon = document.querySelector(".eye-icon");
 
+    // SweetAlert Toast
     const Toast = Swal.mixin({
         toast: true,
         position: "top-end",
         showConfirmButton: false,
-        timer: 2500,
+        timer: 2200,
         timerProgressBar: true,
     });
 
+    // Loading button
     const setLoading = (isLoading) => {
         if (isLoading) {
             loginBtn.classList.add("loading");
@@ -22,22 +26,34 @@
         }
     };
 
+    // ============ 1. VALIDASI KOSONG & EMAIL FORMAT ============
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
         const email = emailInput.value.trim();
         const password = passwordInput.value.trim();
 
-        // 🔹 Validasi input
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!email) {
+            Toast.fire({ icon: "warning", title: "Email harus diisi!" });
+            return;
+        }
+
+        if (!password) {
+            Toast.fire({ icon: "warning", title: "Password harus diisi!" });
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             Toast.fire({ icon: "error", title: "Format email tidak valid" });
             return;
         }
+
         if (password.length < 6) {
             Toast.fire({ icon: "error", title: "Password minimal 6 karakter" });
             return;
         }
 
+        // START LOGIN REQUEST
         setLoading(true);
 
         try {
@@ -56,44 +72,54 @@
                 }, 800);
             } else {
                 Toast.fire({ icon: "error", title: result.message || "Login gagal" });
-                const card = document.querySelector(".login-card");
-                card.style.animation = "shake 0.5s";
-                setTimeout(() => (card.style.animation = ""), 500);
+                shakeForm();
             }
-        } catch (err) {
+        } catch {
             Toast.fire({ icon: "error", title: "Terjadi kesalahan koneksi" });
         } finally {
             setLoading(false);
         }
     });
 
+    // Shake animation
     const shakeForm = () => {
         const card = document.querySelector(".login-card");
-        if (card) {
-            card.style.animation = "shake 0.5s";
-            setTimeout(() => (card.style.animation = ""), 500);
-        }
+        card.style.animation = "shake 0.5s";
+        setTimeout(() => (card.style.animation = ""), 500);
     };
 
-    // 🔹 Toggle Password Visibility
-    const pwdToggle = document.getElementById("passwordToggle");
+    // ============ 2. CAPSLOCK DETECTION ============
+    passwordInput.addEventListener("keyup", (e) => {
+        if (e.getModifierState("CapsLock")) {
+            Toast.fire({
+                icon: "info",
+                title: "CapsLock sedang aktif!"
+            });
+        }
+    });
+
+    // ============ 3. TOGGLE PASSWORD VISIBILITY (eye icon) ============
     if (pwdToggle) {
         pwdToggle.addEventListener("click", () => {
-            const isHidden = password.type === "password";
-            password.type = isHidden ? "text" : "password";
-            pwdToggle.classList.toggle("active", isHidden);
+            const isHidden = passwordInput.type === "password";
+            passwordInput.type = isHidden ? "text" : "password";
+
+            // Ganti class icon agar berubah bentuk
+            if (isHidden) {
+                eyeIcon.classList.add("open");     // icon mata terbuka
+            } else {
+                eyeIcon.classList.remove("open");  // icon mata tertutup
+            }
         });
     }
 
-    // 🔹 Fade-in Animasi Halus
+    // ============ 4. Fade-in Animation ============
     const loginCard = document.querySelector(".login-card");
-    if (loginCard) {
-        loginCard.style.opacity = 0;
-        loginCard.style.transform = "translateY(15px)";
-        setTimeout(() => {
-            loginCard.style.transition = "all 0.6s ease";
-            loginCard.style.opacity = 1;
-            loginCard.style.transform = "translateY(0)";
-        }, 100);
-    }
+    loginCard.style.opacity = 0;
+    loginCard.style.transform = "translateY(15px)";
+    setTimeout(() => {
+        loginCard.style.transition = "all 0.6s ease";
+        loginCard.style.opacity = 1;
+        loginCard.style.transform = "translateY(0)";
+    }, 100);
 });

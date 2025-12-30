@@ -1,4 +1,5 @@
-﻿@using WebArsip.Mvc.Models.ViewModels
+﻿<!-- Updated BulkCreate.cshtml with improved UI and validation -->
+@using WebArsip.Mvc.Models.ViewModels
 @model DocumentBulkCreateViewModel
 
 <link rel="stylesheet" href="~/css/document/index.css" />
@@ -9,72 +10,71 @@
 
 <h2 class="text-white mb-3">Bulk Create Documents</h2>
 
-<form asp-action="BulkCreate" method="post" enctype="multipart/form-data">
-    <div class="glass-card p-4">
+<form asp-action="BulkCreate" method="post" enctype="multipart/form-data" id="bulkForm">
+    <div class="glass-card p-4 shadow-lg rounded-4">
 
-        <!-- SERIAL FORMAT SELECT (GLOBAL) -->
-        <div class="mb-3">
-            <label class="form-label text-light">Serial Format</label>
+        <!-- SERIAL FORMAT SELECT -->
+        <div class="mb-4">
+            <label class="form-label text-light fw-bold">Serial Format</label>
             <select id="SerialFormatId" name="SerialFormatId"
-                    class="form-select bg-transparent text-light border-light serial-format-selector"
+                    class="form-select bg-dark text-light border-secondary serial-format-selector py-2"
                     data-mode="bulk">
                 <option value="">-- No Serial / Manual Title --</option>
-
                 @foreach (var sf in ViewBag.SerialFormats)
                 {
-                    <option value="@sf.Id" class="text-dark">@sf.Name</option>
+                    <option value="@sf.Id" class="text-light">@sf.Name</option>
                 }
             </select>
         </div>
 
-        <table class="table table-dark table-striped align-middle" id="bulkTable">
-            <thead>
-                <tr>
-                    <th>Title (Auto if Serial Format Selected)</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>File</th>
-                    <th></th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @for (int i = 0; i < Model.Items.Count; i++)
-                {
+        <div class="table-responsive bg-dark bg-opacity-50 p-3 rounded-4">
+            <table class="table table-dark table-striped align-middle" id="bulkTable">
+                <thead class="table-gradient">
                     <tr>
-                        <td>
-                            <input asp-for="Items[@i].Title" class="form-control doc-title" />
-                        </td>
-                        <td>
-                            <input asp-for="Items[@i].Description" class="form-control" />
-                        </td>
-                        <td>
-                            <select asp-for="Items[@i].Status" class="form-select">
-                                <option>Published</option>
-                            </select>
-                        </td>
-                        <td>
-                            <input asp-for="Items[@i].FileUpload" type="file" class="form-control"
-                                   accept=".pdf,.doc,.docx,.xls,.xlsx" required />
-                            <div class="invalid-feedback text-warning">Please upload a valid document file.</div>
-                        </td>
-                        <td>
-                            <button type="button" class="btn btn-danger remove-row">X</button>
-                        </td>
+                        <th>Title <small class="text-warning">(Auto if Serial Selected)</small></th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>File</th>
+                        <th></th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
 
-        <div class="d-flex gap-2">
-            <button type="button" id="addRow" class="btn btn-secondary mb-3">
+                <tbody>
+                    @for (int i = 0; i < Model.Items.Count; i++)
+                    {
+                        <tr>
+                            <td>
+                                <input asp-for="Items[@i].Title" class="form-control doc-title bg-dark text-light border-secondary" readonly />
+                            </td>
+                            <td>
+                                <input asp-for="Items[@i].Description" class="form-control bg-dark text-light border-secondary" />
+                            </td>
+                            <td>
+                                <select asp-for="Items[@i].Status" class="form-select bg-dark text-light border-secondary">
+                                    <option>Published</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input asp-for="Items[@i].FileUpload" type="file" class="form-control file-input bg-dark text-light border-secondary"
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx" required />
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger remove-row rounded-pill px-3">X</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="button" id="addRow" class="btn btn-secondary rounded-pill px-4">
                 + Add Row
             </button>
-
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary rounded-pill px-4">
                 Create All
             </button>
-            <a asp-action="Index" class="btn btn-secondary rounded-pill px-4">Cancel</a>
+            <a asp-action="Index" class="btn btn-outline-light rounded-pill px-4">Cancel</a>
         </div>
     </div>
 </form>
@@ -82,5 +82,37 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     window.initialRowCount = @Model.Items.Count;
+
+    // ===== VALIDATION =====
+    document.getElementById("bulkForm").addEventListener("submit", function (e) {
+        let rows = document.querySelectorAll("#bulkTable tbody tr");
+        let isValid = true;
+        let errorMsg = "";
+
+        rows.forEach((row, index) => {
+            let title = row.querySelector(".doc-title").value.trim();
+            let file = row.querySelector(".file-input").value.trim();
+
+            // Validate file format
+            if (file !== "") {
+                let allowed = ["pdf", "doc", "docx", "xls", "xlsx"];
+                let ext = file.split('.').pop().toLowerCase();
+                if (!allowed.includes(ext)) {
+                    isValid = false;
+                    errorMsg = "One or more files are not valid. Only PDF, DOCX, and Excel formats are allowed.";
+                }
+            }
+        });
+
+        if (!isValid) {
+            e.preventDefault();
+            Swal.fire({
+                icon: 'error',
+                title: 'Validation Error',
+                text: errorMsg,
+                confirmButtonColor: '#d33'
+            });
+        }
+    });
 </script>
 <script src="~/js/serial-helper.js"></script>

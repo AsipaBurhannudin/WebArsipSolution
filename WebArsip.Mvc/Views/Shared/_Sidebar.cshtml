@@ -1,0 +1,26 @@
+﻿@using WebArsip.Mvc.Helpers
+@inject IConfiguration Configuration
+
+@{
+    var menus = SidebarHelper.GetAccessibleMenus(Context);
+}
+
+<nav id="sidebar-wrapper" aria-label="Main sidebar">
+    <div class="sidebar-heading text-center py-4">
+        <img src="~/images/logo-weba.png" class="sidebar-logo mb-2" alt="Logo WebArsip" />
+        <div class="fw-bold">WebArsip JLM</div>
+    </div>
+
+    <div class="list-group list-group-flush mt-3">
+        @foreach (var menu in menus)
+        {
+            var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+            var isActive = controller == menu.Controller ? "active" : "";
+
+            <a asp-controller="@menu.Controller" asp-action="Index"
+               class="list-group-item list-group-item-action @isActive">
+                <i class="@menu.Icon me-2"></i> @menu.Label
+            </a>
+        }
+    </div>
+</nav>

@@ -44,23 +44,8 @@
     <!-- WRAPPER: sidebar + page content -->
     <div id="wrapper" class="d-flex">
 
-        <!-- 🟣 SIDEBAR -->
-        <nav id="sidebar-wrapper" aria-label="Main sidebar">
-            <div class="sidebar-heading text-center py-3">
-                <i class="fa-solid fa-box-archive me-2 text-info"></i> <strong>WebArsip JLM</strong>
-            </div>
-
-            <div class="list-group list-group-flush mt-3">
-                @foreach (var menu in menus)
-                {
-                    var isActive = ViewContext.RouteData.Values["controller"]?.ToString() == menu.Controller ? "active" : "";
-                    <a asp-controller="@menu.Controller" asp-action="Index"
-                       class="list-group-item list-group-item-action @isActive">
-                        <i class="@menu.Icon me-2"></i> @menu.Label
-                    </a>
-                }
-            </div>
-        </nav>
+        <!-- 🟣 SIDEBAR (now from partial) -->
+        @await Html.PartialAsync("_Sidebar")
 
         <!-- 🔹 PAGE CONTENT -->
         <div id="page-content-wrapper" class="flex-fill">
@@ -92,6 +77,15 @@
             <main class="container-fluid py-4 px-4 dashboard-wrapper">
                 @RenderBody()
             </main>
+
+            <!-- FOOTER FIXED -->
+            <footer class="footer-webarsip fixed-footer">
+                <div class="footer-inner">
+                    <span>© @DateTime.Now.Year WebArsip Jala Lintas Media</span>
+                    <span class="dot">•</span>
+                    <span>All Rights Reserved</span>
+                </div>
+            </footer>
         </div>
     </div>
 

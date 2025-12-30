@@ -6,33 +6,127 @@
 
 <div class="glass-card p-4">
     <h3>Create Serial Template</h3>
-    <form asp-action="Create" method="post">
+
+    <form asp-action="Create" method="post" id="serialForm">
+
         <div class="mb-2">
             <label>Name</label>
             <input asp-for="Name" class="form-control" />
         </div>
+
         <div class="mb-2">
             <label>Key (unique, uppercase)</label>
-            <input asp-for="Key" class="form-control" />
+            <input asp-for="Key" class="form-control" id="serialKey" />
         </div>
+
         <div class="mb-2">
             <label>Pattern (use {DATE} and {NUMBER:n})</label>
-            <input asp-for="Pattern" class="form-control" />
-            <small class="form-text text-white">Example: HO-PCJLM/SK/{DATE}/{NUMBER:3}</small>
+            <input asp-for="Pattern" class="form-control" id="serialPattern" />
+            <small class="form-text text-white">
+                Example: HO-PCJLM/SK/{DATE}/{NUMBER:3}
+            </small>
         </div>
+
         <div class="mb-2">
             <label>Start Number</label>
             <input asp-for="StartNumber" class="form-control" />
         </div>
+
         <div class="mb-2 form-check">
             <input asp-for="IsActive" class="form-check-input" />
             <label asp-for="IsActive" class="form-check-label">Active</label>
         </div>
+
         <div class="mb-2">
             <label>Note</label>
             <input asp-for="Note" class="form-control" />
         </div>
+
         <button class="btn btn-success">Create</button>
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+
     </form>
+
+    @*<hr class="text-white mt-4" />
+
+    <!-- ========================== -->
+    <!-- PREVIEW / TEST SECTION     -->
+    <!-- ========================== -->
+
+    <h4 class="text-info">Preview Serial Number</h4>
+
+    <div class="mb-2">
+        <label>Pick a Date (optional)</label>
+        <input type="date" id="previewDate" class="form-control bg-dark text-white" />
+    </div>
+
+    <button id="btnPreview" class="btn btn-info me-2">Preview</button>
+    <button id="btnGenerate" class="btn btn-warning">Generate Test</button>
+
+    <div id="previewResult" class="mt-3 text-warning fw-bold"></div>
+
 </div>
+
+
+@section Scripts {
+    <script>
+        // Convert Key to uppercase
+        $("#serialKey").on("input", function () {
+            this.value = this.value.toUpperCase();
+        });
+
+        // =========================
+        // PREVIEW (no increment)
+        // =========================
+        $("#btnPreview").click(function () {
+
+            let key = $("#serialKey").val().trim();
+            if (!key) {
+                alert("Key harus diisi dulu");
+                return;
+            }
+
+            let date = $("#previewDate").val();
+
+            $.ajax({
+                url: "/SerialNumber/PreviewSerial",
+                method: "POST",
+                contentType: "application/json",
+                data: JSON.stringify({ key: key, date: date }),
+                success: function (res) {
+                    if (!res.success) {
+                        $("#previewResult").text("Preview failed.");
+                        return;
+                    }
+                    $("#previewResult").text("Preview: " + res.generated);
+                }
+            });
+        });
+
+        // =========================
+        // GENERATE (increment)
+        // =========================
+        $("#btnGenerate").click(function () {
+
+            let key = $("#serialKey").val().trim();
+            if (!key) {
+                alert("Key harus diisi dulu");
+                return;
+            }
+
+            $.ajax({
+                url: "/SerialNumber/GenerateSerial",
+                method: "POST",
+                data: { key: key },
+                success: function (res) {
+                    if (!res.success) {
+                        $("#previewResult").text("Failed to generate.");
+                        return;
+                    }
+                    $("#previewResult").text("Generated: " + res.generated);
+                }
+            });
+        });
+
+    </script>
+}*@

@@ -1,4 +1,4 @@
-/* =========================================================
+﻿/* =========================================================
    GLOBAL
 ========================================================= */
 body {
@@ -294,4 +294,72 @@ body {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+}
+
+/* ====== FOOTER (WebArsip Theme) ====== */
+.footer-webarsip {
+    width: 100%;
+    padding: 18px 0;
+    text-align: center;
+    margin-top: 40px;
+    /* Dark modern */
+    background: #0d0f12;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    /* Soft shadow & depth */
+    box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.45);
+    /* Smooth fade */
+    animation: footerFadeIn 0.6s ease;
+}
+
+.footer-inner {
+    color: #d2d6db;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 0.3px;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+    .footer-inner .dot {
+        opacity: 0.6;
+    }
+
+/* Responsiveness */
+@media (max-width: 600px) {
+    .footer-inner {
+        font-size: 12px;
+        flex-direction: column;
+        gap: 2px;
+    }
+}
+
+/* Fade in animation */
+@keyframes footerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sidebar-logo {
+    width: 85px;
+    height: auto;
+    filter: drop-shadow(0 0 6px rgba(255,255,255,0.35));
+    border-radius: 10px;
+}
+
+#page-content-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-wrapper {
+    flex: 1;
 }

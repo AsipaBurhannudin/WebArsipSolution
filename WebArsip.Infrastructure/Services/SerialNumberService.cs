@@ -9,8 +9,11 @@ namespace WebArsip.Infrastructure.Services
     {
         private readonly AppDbContext _db;
 
-        private static readonly Regex NumberTokenRx = new(@"\{NUMBER:(\d+)\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex DateTokenRx = new(@"\{DATE(?::([^}]+))?\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex NumberTokenRx =
+            new(@"\{NUMBER:(\d+)\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+        private static readonly Regex DateTokenRx =
+            new(@"\{DATE(?::([^}]+))?\}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private const int MaxRetries = 5;
 
@@ -19,33 +22,55 @@ namespace WebArsip.Infrastructure.Services
             _db = db;
         }
 
-        // PREVIEW
+        // ==========================
+        // PREVIEW (NO INCREMENT)
+        // ==========================
         public async Task<string?> PreviewAsync(string key, DateTime? date = null)
         {
-            var fmt = await _db.SerialNumberFormats.AsNoTracking()
+            var fmt = await _db.SerialNumberFormats
+                .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Key == key && x.IsActive);
 
             if (fmt == null) return null;
 
-            return Build(fmt.Pattern, fmt.CurrentNumber, date ?? DateTime.UtcNow);
+            DateTime at = date ?? DateTime.UtcNow;
+
+            // Ambil counter bulan
+            var counter = await _db.SerialNumberMonthlyCounters
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c =>
+                    c.FormatKey == key &&
+                    c.Year == at.Year &&
+                    c.Month == at.Month);
+
+            long numberToPreview =
+                counter != null
+                ? counter.CurrentNumber + 1
+                : fmt.CurrentNumber + 1;
+
+            return Build(fmt.Pattern, numberToPreview, at);
         }
 
-        // BULLETPROOF GENERATOR
-        public async Task<(bool ok, string title, long usedNumber)> GenerateAsync(
-            string key,
-            Func<string, Task<bool>> uniquenessCheck)
+        // ==========================
+        // GENERATE (REAL)
+        // ==========================
+        public async Task<(bool ok, string generated, long usedNumber)>
+            GenerateAsync(string key, Func<string, Task<bool>> uniqCheck, DateTime? docDate = null)
         {
+            DateTime at = docDate ?? DateTime.UtcNow;
+
             for (int attempt = 1; attempt <= MaxRetries; attempt++)
             {
                 using var tx = await _db.Database.BeginTransactionAsync();
 
                 try
                 {
-                    // STEP 1 — Lock row of counter only
+                    // Lock format
                     var fmt = await _db.SerialNumberFormats
-                        .FromSqlRaw(@"SELECT * FROM SerialNumberFormats 
-                                      WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
-                                      WHERE [Key] = {0}", key)
+                        .FromSqlRaw(@"
+                            SELECT * FROM SerialNumberFormats
+                            WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
+                            WHERE [Key] = {0} AND IsActive = 1", key)
                         .FirstOrDefaultAsync();
 
                     if (fmt == null)
@@ -54,69 +79,104 @@ namespace WebArsip.Infrastructure.Services
                         return (false, "", 0);
                     }
 
-                    long number = fmt.CurrentNumber;
+                    // Lock counter bulan
+                    var counter = await _db.SerialNumberMonthlyCounters
+                        .FromSqlRaw(@"
+                            SELECT * FROM SerialNumberMonthlyCounters
+                            WITH (UPDLOCK, HOLDLOCK, ROWLOCK)
+                            WHERE FormatKey = {0} AND [Year] = {1} AND [Month] = {2}",
+                            key, at.Year, at.Month)
+                        .FirstOrDefaultAsync();
 
-                    for (int guard = 0; guard < 10000; guard++)
+                    if (counter == null)
                     {
-                        string candidate = Build(fmt.Pattern, number, DateTime.UtcNow);
-
-                        bool unique = await uniquenessCheck(candidate);
-                        if (unique)
+                        counter = new SerialNumberMonthlyCounter
                         {
-                            fmt.CurrentNumber = number + 1;
-                            _db.Update(fmt);
+                            FormatKey = key,
+                            Year = at.Year,
+                            Month = at.Month,
+                            CurrentNumber = 1
+                        };
 
-                            try
-                            {
-                                await _db.SaveChangesAsync();
-                                await tx.CommitAsync();
-                                return (true, candidate, number);
-                            }
-                            catch (DbUpdateException ex)
-                            {
-                                // UNIQUE INDEX violation — continue next number
-                                if (ex.InnerException?.Message.Contains("duplicate") == true)
-                                {
-                                    number++;
-                                    continue;
-                                }
-
-                                throw;
-                            }
-                        }
-
-                        number++;
+                        _db.SerialNumberMonthlyCounters.Add(counter);
+                    }
+                    else
+                    {
+                        counter.CurrentNumber++;
                     }
 
-                    await tx.RollbackAsync();
-                    return (false, "", 0);
+                    long currentNum = counter.CurrentNumber;
+
+                    // Build serial
+                    string serial = Build(fmt.Pattern, currentNum, at);
+
+                    // Check unique
+                    if (!await uniqCheck(serial))
+                    {
+                        counter.CurrentNumber++;
+                        await _db.SaveChangesAsync();
+                        await tx.CommitAsync();
+                        return await GenerateAsync(key, uniqCheck, at);
+                    }
+
+                    // Sync format
+                    fmt.CurrentNumber = currentNum;
+
+                    await _db.SaveChangesAsync();
+                    await tx.CommitAsync();
+
+                    return (true, serial, currentNum);
                 }
-                catch (Exception)
+                catch
                 {
                     await tx.RollbackAsync();
-
                     if (attempt == MaxRetries) throw;
-
-                    await Task.Delay(120 * attempt);
+                    await Task.Delay(100 * attempt);
                 }
             }
 
             return (false, "", 0);
         }
 
+        // ==========================
+        // BUILD PATTERN
+        // ==========================
         private static string Build(string pattern, long number, DateTime at)
         {
-            var withDate = DateTokenRx.Replace(pattern, m =>
+            string withDate = DateTokenRx.Replace(pattern, m =>
             {
-                var fmt = m.Groups[1].Success ? m.Groups[1].Value : "dd-MM-yyyy";
+                string? fmt = m.Groups[1].Value;
+
+                if (string.IsNullOrWhiteSpace(fmt))
+                    return $"{Roman(at.Month)}-{at.Year}";
+
                 return at.ToString(fmt);
             });
 
-            return NumberTokenRx.Replace(withDate, m =>
+            string final = NumberTokenRx.Replace(withDate, m =>
             {
                 int pad = int.Parse(m.Groups[1].Value);
                 return number.ToString().PadLeft(pad, '0');
             });
+
+            return final;
         }
+
+        private static string Roman(int month) => month switch
+        {
+            1 => "I",
+            2 => "II",
+            3 => "III",
+            4 => "IV",
+            5 => "V",
+            6 => "VI",
+            7 => "VII",
+            8 => "VIII",
+            9 => "IX",
+            10 => "X",
+            11 => "XI",
+            12 => "XII",
+            _ => ""
+        };
     }
 }

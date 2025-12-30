@@ -25,9 +25,9 @@ namespace WebArsip.Mvc.Helpers
                     ("User", "👤 Users", "User"),
                     ("Role", "🔑 Roles", "Role"),
                     ("Permission", "⚙ Permissions", "Permission"),
-                    ("UserPermission", "📜 User Permission", "AuditLog"),
-                      ("SerialNumber", "📜 Serial Number Manage", "SerialNumber"),
-                    ("AuditLog", "📜 Audit Logs", "AuditLog")
+                    ("UserPermission", "🗂️ Doc User Permission", "AuditLog"),
+                      ("SerialNumber", "🖥️ Serial Number Manage", "SerialNumber"),
+                    ("AuditLog", "📊 Audit Logs", "AuditLog")
                 };
             }
 
